@@ -1,34 +1,1849 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#000B5E">
-<link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" href="./icons/composerm-logo.svg" type="image/svg+xml">
-<title>ComposerM</title>
-<style>
-html,body{margin:0;background:#f9fafb;color:#17213b;font-family:system-ui,sans-serif}
-body{display:grid;place-items:center;min-height:100vh}
-.loading{padding:24px;text-align:center}
-.brand{font-weight:800;color:#000B5E;font-size:1.3rem}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ComposerM — planejamento físico de materiais rodoviários por período, estaqueamento e geometria PB.">
+  <title>ComposerM · Planejamento de Materiais</title>
+  <meta name="theme-color" content="#000B5E">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ComposerM">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/composerm-logo.svg">
+  <link rel="apple-touch-icon" href="./icons/composerm-logo.svg">
+  <style>
+    :root {
+      --edeconsil-blue: #000B5E;
+      --edeconsil-blue-dark: #000744;
+      --edeconsil-yellow: #F4B900;
+      --edeconsil-yellow-dark: #d9a400;
+      --ink: #17213b;
+      --muted: #5f687c;
+      --paper: #f9fafb;
+      --surface: #ffffff;
+      --line: #d7dbea;
+      --asphalt: var(--edeconsil-blue);
+      --asphalt-2: #00157d;
+      --amber: var(--edeconsil-yellow);
+      --amber-dark: #9f7800;
+      --teal: var(--edeconsil-blue);
+      --teal-dark: var(--edeconsil-blue-dark);
+      --blue: var(--edeconsil-blue);
+      --red: #b54747;
+      --shadow: 0 14px 32px rgba(0, 11, 94, .08);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+    button, input, select { font: inherit; }
+    button { touch-action: manipulation; }
+    .app-header {
+      color: #fff;
+      background:
+        linear-gradient(118deg, rgba(244,185,0,.20), transparent 34%),
+        linear-gradient(135deg, var(--edeconsil-blue), #00157d);
+      border-bottom: 4px solid var(--amber);
+    }
+    .header-inner {
+      width: min(1500px, calc(100% - 32px));
+      min-height: 92px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .brand { display: flex; align-items: center; gap: 16px; min-width: 0; }
+    .brand-logo-wrap {
+      width: 148px; height: 72px; flex: 0 0 auto; border-radius: 14px;
+      display: grid; place-items: center; overflow: hidden;
+      background: #fff; border: 1px solid rgba(255,255,255,.65);
+      box-shadow: 0 6px 18px rgba(0,0,0,.18);
+    }
+    .brand-logo { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .brand-company { display: none; }
+    .result-brand { display:flex; align-items:center; gap:12px; min-width:0; }
+    .result-logo { width:112px; height:58px; object-fit:contain; border:1px solid #e1e4ef; border-radius:10px; background:#fff; }
+    .brand h1 { margin: 0; font-size: clamp(1.1rem, 2vw, 1.5rem); letter-spacing: -.02em; }
+    .brand p { margin: 3px 0 0; color: #dfe4ff; font-size: .9rem; }
+    .header-status { text-align: right; color: #dfe4ff; font-size: .82rem; }
+    .status-line { display: flex; align-items: center; justify-content: flex-end; gap: 8px; font-weight: 700; color: #fff; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--edeconsil-yellow); box-shadow: 0 0 0 4px rgba(244,185,0,.18); }
+    .app-nav { background: var(--edeconsil-blue); border-bottom: 3px solid var(--edeconsil-yellow); position: sticky; top: 0; z-index: 20; }
+    .tab-list { width: min(1500px, calc(100% - 32px)); margin: 0 auto; display: flex; gap: 4px; }
+    .tab-button {
+      appearance: none; border: 0; border-bottom: 3px solid transparent; background: transparent;
+      color: #dfe4ff; padding: 15px 19px 12px; font-weight: 750; cursor: pointer;
+    }
+    .tab-button:hover { color: #fff; background: rgba(255,255,255,.08); }
+    .tab-button[aria-selected="true"] { color: var(--edeconsil-yellow); border-bottom-color: var(--edeconsil-yellow); }
+    main { width: min(1500px, calc(100% - 32px)); margin: 28px auto 64px; }
+    .page { display: none; }
+    .page.active { display: block; animation: page-in .2s ease-out; }
+    @keyframes page-in { from { opacity: .2; transform: translateY(4px); } }
+    .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin: 0 0 18px; }
+    .section-heading h2 { margin: 0; color: var(--edeconsil-blue); font-size: clamp(1.35rem, 2.5vw, 1.9rem); letter-spacing: -.035em; }
+    .section-heading p { margin: 5px 0 0; color: var(--muted); }
+    .eyebrow { color: var(--edeconsil-blue); font-size: .73rem; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+    .card-shell { background: var(--surface); border: 1px solid rgba(0,11,94,.20); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .filter-bar { display: grid; grid-template-columns: repeat(5, minmax(140px, 1fr)) auto; gap: 12px; padding: 16px; margin-bottom: 18px; }
+    .field { min-width: 0; }
+    .field label { display: block; margin: 0 0 6px; color: var(--edeconsil-blue); font-size: .78rem; font-weight: 750; }
+    .control {
+      width: 100%; min-height: 42px; border: 1px solid #c8cee2; border-radius: 10px;
+      background: #fff; color: var(--ink); padding: 8px 10px; outline: none;
+    }
+    .control:focus { border-color: var(--edeconsil-blue); box-shadow: 0 0 0 3px rgba(244,185,0,.30); }
+    .fixed-control { display: flex; align-items: center; color: var(--edeconsil-blue); background: #f1f3fb; font-weight: 750; cursor: default; }
+    .filter-action { align-self: end; }
+    .btn-app {
+      border: 1px solid transparent; border-radius: 10px; min-height: 42px; padding: 9px 14px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;
+      font-weight: 780; text-decoration: none; white-space: nowrap; transition: transform .12s, background .12s;
+    }
+    .btn-app:hover { transform: translateY(-1px); }
+    .btn-primary-app { background: var(--edeconsil-yellow); color: var(--edeconsil-blue); border-color: var(--edeconsil-yellow); }
+    .btn-primary-app:hover { background: var(--edeconsil-yellow-dark); }
+    .btn-dark-app { background: var(--edeconsil-blue); color: #fff; }
+    .btn-dark-app:hover { background: var(--edeconsil-blue-dark); }
+    .btn-amber { background: var(--edeconsil-yellow); color: var(--edeconsil-blue); border-color: var(--edeconsil-yellow-dark); }
+    .btn-amber:hover { background: var(--edeconsil-yellow-dark); }
+    .btn-outline-app { background: #fff; color: var(--edeconsil-blue); border-color: rgba(0,11,94,.35); }
+    .btn-outline-app:hover { border-color: var(--edeconsil-blue); background: #f2f4ff; }
+    .btn-danger-quiet { color: var(--red); background: #fff; border-color: #edcccc; }
+    .btn-sm-app { min-height: 34px; padding: 6px 10px; font-size: .82rem; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+    .kpi { padding: 17px 18px; min-height: 122px; position: relative; overflow: hidden; }
+    .kpi::after { content: ""; position: absolute; width: 70px; height: 70px; border-radius: 50%; right: -24px; top: -24px; background: rgba(244,185,0,.16); }
+    .kpi-label { color: var(--muted); font-size: .78rem; font-weight: 760; text-transform: uppercase; letter-spacing: .045em; }
+    .kpi-value { margin-top: 8px; font-size: clamp(1.45rem, 3vw, 2rem); line-height: 1.1; font-weight: 850; letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
+    .kpi-meta { margin-top: 9px; color: var(--muted); font-size: .78rem; }
+    .chart-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 16px; margin-bottom: 16px; }
+    .chart-card { padding: 18px; min-width: 0; }
+    .chart-title { display: flex; justify-content: space-between; align-items: start; gap: 14px; margin-bottom: 12px; }
+    .chart-title h3 { margin: 0; font-size: 1rem; }
+    .chart-title p { margin: 3px 0 0; color: var(--muted); font-size: .78rem; }
+    .pill { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 4px 8px; color: var(--muted); font-size: .72rem; white-space: nowrap; }
+    .canvas-wrap { position: relative; height: 290px; }
+    canvas { display: block; width: 100%; height: 100%; }
+    .ranking { display: grid; gap: 12px; margin-top: 15px; }
+    .rank-row { display: grid; grid-template-columns: minmax(110px, 1fr) 2fr auto; gap: 10px; align-items: center; font-size: .82rem; }
+    .rank-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 680; }
+    .rank-track { height: 8px; border-radius: 999px; background: #e8eaf2; overflow: hidden; }
+    .rank-bar { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--edeconsil-blue), var(--edeconsil-yellow)); }
+    .rank-value { font-variant-numeric: tabular-nums; color: var(--muted); }
+    .table-card { overflow: hidden; }
+    .table-head { padding: 16px 18px 12px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .table-head h3 { margin: 0; font-size: 1rem; }
+    .table-scroll { overflow: auto; max-height: 440px; }
+    table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+    th, td { padding: 11px 13px; text-align: left; border-bottom: 1px solid #e1e4ef; vertical-align: middle; }
+    th { position: sticky; top: 0; z-index: 2; background: #f1f3fb; color: var(--edeconsil-blue); font-size: .73rem; letter-spacing: .035em; text-transform: uppercase; }
+    tbody tr:hover { background: #fffbea; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .source-note { display: flex; gap: 12px; align-items: start; margin-top: 16px; padding: 14px 16px; color: #343d61; background: #fff9df; border: 1px solid #f1d66b; border-radius: 13px; font-size: .82rem; }
+    .note-icon { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 auto; background: var(--edeconsil-yellow); color: var(--edeconsil-blue); font-weight: 900; }
+    .sim-toolbar { display: flex; flex-wrap: wrap; gap: 9px; }
+    .simulator-layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(330px, .75fr); gap: 18px; align-items: start; }
+    .panel-title { padding: 17px 18px; display: flex; align-items: center; justify-content: space-between; gap: 15px; border-bottom: 1px solid var(--line); }
+    .panel-title h3 { margin: 0; color: var(--edeconsil-blue); font-size: 1rem; }
+    .panel-title p { margin: 3px 0 0; color: var(--muted); font-size: .78rem; }
+    .compositions { overflow: hidden; }
+    .composition-list { padding: 10px; display: grid; gap: 12px; max-height: 820px; overflow: auto; }
+    details.composition-category { border: 1px solid rgba(0,11,94,.20); border-radius: 14px; background: #f8f9fc; overflow: hidden; }
+    details.composition-category > summary { list-style: none; cursor: pointer; padding: 13px 15px; display: flex; align-items: center; gap: 10px; background: #eef1fb; color: var(--edeconsil-blue); font-weight: 850; position: sticky; top: 0; z-index: 3; }
+    details.composition-category > summary::-webkit-details-marker { display: none; }
+    details.composition-category > summary::before { content: "›"; width: 18px; color: var(--edeconsil-yellow-dark); font-size: 1.3rem; font-weight: 900; transition: transform .15s; }
+    details.composition-category[open] > summary::before { transform: rotate(90deg); }
+    .composition-category-name { flex: 1; }
+    .composition-category-count { border-radius: 999px; padding: 3px 8px; background: #fff; border: 1px solid rgba(0,11,94,.18); color: var(--muted); font-size: .68rem; font-weight: 750; }
+    .composition-category-body { padding: 9px; display: grid; gap: 9px; background: #fff; }
+    details.service-card { border: 1px solid var(--line); border-radius: 12px; background: #fff; overflow: hidden; }
+    details.service-card[open] { border-color: rgba(0,11,94,.55); box-shadow: 0 7px 18px rgba(0,11,94,.10); }
+    details.service-card summary { list-style: none; cursor: pointer; padding: 13px 14px; display: flex; align-items: center; gap: 10px; background: #f8f9fc; }
+    details.service-card summary::-webkit-details-marker { display: none; }
+    details.service-card summary::before { content: "›"; width: 20px; color: var(--edeconsil-yellow-dark); font-size: 1.35rem; font-weight: 800; transform: rotate(0); transition: transform .15s; }
+    details.service-card[open] summary::before { transform: rotate(90deg); }
+    .service-summary-name { flex: 1; min-width: 0; font-weight: 780; }
+    .category-chip { border-radius: 999px; padding: 3px 7px; color: var(--edeconsil-blue); background: #fff2b8; font-size: .68rem; font-weight: 800; }
+    .service-body { padding: 14px; border-top: 1px solid var(--line); }
+    .edit-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-bottom: 13px; }
+    .param-grid { display: grid; grid-template-columns: repeat(4, minmax(110px, 1fr)); gap: 9px; padding: 11px; margin-bottom: 13px; background: #f7f8fc; border: 1px solid #dfe3ef; border-radius: 10px; }
+    .param-grid .field label { font-size: .7rem; }
+    .param-grid .control { min-height: 38px; padding: 6px 8px; }
+    .composition-table { overflow-x: auto; }
+    .composition-table table { min-width: 900px; }
+    .composition-table th { position: static; }
+    .composition-table input, .composition-table select { min-height: 35px; padding: 5px 7px; border-radius: 8px; }
+    .icon-btn { width: 34px; height: 34px; border: 1px solid #e7c7c7; background: #fff; color: var(--red); border-radius: 9px; cursor: pointer; }
+    .service-actions { display: flex; justify-content: space-between; gap: 10px; padding-top: 12px; }
+    .targets { position: sticky; top: 74px; overflow: hidden; }
+    .period-box { padding: 14px; border-bottom: 1px solid var(--line); background: #f7f8fc; }
+    .project-field { margin-bottom: 12px; }
+    .period-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .period-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 9px; color: var(--muted); font-size: .75rem; }
+    .period-meta strong { color: var(--edeconsil-blue); }
+    .segment-form { padding: 14px; border-bottom: 1px solid var(--line); background: #fff; }
+    .segment-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .segment-form-grid .span-2 { grid-column: 1 / -1; }
+    .segment-form-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .segment-form-actions .btn-app:first-child { flex: 1; }
+    .segment-list { padding: 12px; display: grid; gap: 9px; max-height: 390px; overflow: auto; background: #f9fafb; }
+    .segment-card { border: 1px solid var(--line); border-radius: 11px; padding: 11px; background: #fff; }
+    .segment-card-head { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+    .segment-card strong { display: block; font-size: .82rem; }
+    .segment-card small { display: block; margin-top: 3px; color: var(--muted); font-size: .7rem; }
+    .segment-route { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; padding: 4px 7px; border-radius: 7px; color: var(--edeconsil-blue); background: #fff5c9; font-size: .7rem; font-weight: 800; }
+    .segment-qty { margin-top: 8px; color: var(--ink); font-size: .75rem; }
+    .segment-card-actions { display: flex; gap: 5px; }
+    .segment-card-actions .icon-btn { color: var(--edeconsil-blue); border-color: var(--edeconsil-yellow); background: #fff9df; }
+    .segment-card-actions .remove-segment { color: var(--red); border-color: #e7c7c7; }
+    .segment-empty { padding: 26px 14px; text-align: center; color: var(--muted); font-size: .76rem; }
+    .result-subhead { padding: 14px 18px 9px; color: var(--edeconsil-blue); background: #fff8d8; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: .82rem; font-weight: 850; text-transform: uppercase; letter-spacing: .04em; }
+    .target-list { padding: 12px; display: grid; gap: 9px; max-height: 585px; overflow: auto; }
+    .target-row { display: grid; grid-template-columns: auto minmax(0, 1fr) 105px 80px; gap: 9px; align-items: center; border: 1px solid var(--line); border-radius: 11px; padding: 10px; }
+    .target-row:has(input[type="checkbox"]:checked) { border-color: var(--edeconsil-yellow); background: #fff9df; }
+    .target-name { min-width: 0; }
+    .target-name strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .83rem; }
+    .target-name small { color: var(--muted); font-size: .69rem; }
+    .target-row .control { min-height: 38px; padding: 6px 8px; }
+    .check { width: 18px; height: 18px; accent-color: var(--edeconsil-blue); }
+    .process-area { padding: 14px; border-top: 1px solid var(--line); background: #f9fafb; }
+    .process-area .btn-app { width: 100%; min-height: 50px; font-size: .95rem; }
+    .round-option { display: flex; align-items: center; gap: 8px; margin: 0 0 11px; color: var(--muted); font-size: .77rem; }
+    .result-section { margin-top: 20px; scroll-margin-top: 80px; }
+    .result-shell { overflow: hidden; }
+    .result-toolbar { padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); }
+    .result-toolbar h3 { margin: 0; color: var(--edeconsil-blue); font-size: 1.05rem; }
+    .result-company { display: block; margin-bottom: 2px; color: var(--edeconsil-yellow-dark); font-size: .65rem; font-weight: 900; letter-spacing: .16em; }
+    .result-toolbar p { margin: 3px 0 0; color: var(--muted); font-size: .78rem; }
+    .result-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .result-summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--line); border-bottom: 1px solid var(--line); }
+    .result-stat { padding: 14px 18px; background: #f8f9fc; }
+    .result-stat span { display: block; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+    .result-stat strong { display: block; margin-top: 4px; color: var(--edeconsil-blue); font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+    .empty-state { padding: 52px 24px; text-align: center; color: var(--muted); }
+    .empty-state strong { display: block; color: var(--ink); margin-bottom: 5px; }
+    .badge-origin { display: inline-block; margin: 2px 3px 2px 0; padding: 3px 6px; border-radius: 6px; background: #eef0f7; color: #555f75; font-size: .68rem; }
+    dialog { width: min(560px, calc(100% - 28px)); border: 0; border-radius: 16px; padding: 0; box-shadow: 0 28px 90px rgba(0,0,0,.32); }
+    dialog::backdrop { background: rgba(9,18,17,.58); backdrop-filter: blur(2px); }
+    .dialog-head { padding: 18px 20px; color: #fff; background: var(--edeconsil-blue); border-bottom: 4px solid var(--edeconsil-yellow); }
+    .dialog-head h3 { margin: 0; font-size: 1.1rem; }
+    .dialog-body { padding: 20px; display: grid; gap: 13px; }
+    .dialog-actions { padding: 14px 20px; display: flex; justify-content: flex-end; gap: 9px; background: #f8f9fc; border-top: 1px solid var(--line); }
+    .toast-app { position: fixed; right: 20px; bottom: 20px; z-index: 99; max-width: min(420px, calc(100% - 40px)); padding: 13px 16px; border: 1px solid var(--edeconsil-yellow); border-left-width: 5px; border-radius: 11px; color: #fff; background: var(--edeconsil-blue); box-shadow: 0 16px 36px rgba(0,11,94,.24); opacity: 0; transform: translateY(10px); pointer-events: none; transition: .18s; }
+    .toast-app.show { opacity: 1; transform: translateY(0); }
+    .muted { color: var(--muted); }
+    .hidden { display: none !important; }
+    @media (max-width: 1100px) {
+      .filter-bar { grid-template-columns: repeat(3, 1fr); }
+      .filter-action { align-self: stretch; }
+      .filter-action .btn-app { width: 100%; height: 100%; }
+      .chart-grid { grid-template-columns: 1fr; }
+      .simulator-layout { grid-template-columns: 1fr; }
+      .targets { position: static; }
+      .target-list { max-height: none; }
+    }
+    @media (max-width: 760px) {
+      .header-inner { width: min(100% - 24px, 1500px); min-height: 82px; }
+      .header-status { display: none; }
+      .brand-logo-wrap { width:124px; height:60px; }
+      .tab-list, main { width: min(100% - 24px, 1500px); }
+      main { margin-top: 20px; }
+      .tab-button { flex: 1; padding-left: 8px; padding-right: 8px; }
+      .filter-bar { grid-template-columns: 1fr 1fr; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .section-heading { align-items: start; flex-direction: column; }
+      .param-grid { grid-template-columns: 1fr 1fr; }
+      .target-row { grid-template-columns: auto minmax(0,1fr) 86px 72px; }
+      .result-toolbar { align-items: start; flex-direction: column; }
+      .result-summary { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 500px) {
+      .brand p { display: none; }
+      .brand { gap:10px; }
+      .brand-logo-wrap { width:98px; height:50px; border-radius:10px; }
+      .result-logo { width:88px; height:46px; }
+      .filter-bar, .kpi-grid { grid-template-columns: 1fr; }
+      .edit-grid, .param-grid { grid-template-columns: 1fr; }
+      .target-row { grid-template-columns: auto 1fr; }
+      .target-row .target-input, .target-row .target-unit { grid-column: 2; }
+      .period-grid, .result-summary { grid-template-columns: 1fr; }
+      .segment-form-grid { grid-template-columns: 1fr; }
+      .segment-form-grid .span-2 { grid-column: auto; }
+      .sim-toolbar, .result-actions { width: 100%; }
+      .sim-toolbar .btn-app, .result-actions .btn-app { flex: 1; }
+    }
+    .pipe-geometry-box { margin: 12px 0 4px; padding: 14px; border: 1px solid rgba(0,11,94,.22); border-radius: 12px; background: #f8f9ff; }
+    .pipe-geometry-head { display:flex; align-items:start; justify-content:space-between; gap:12px; margin-bottom:10px; }
+    .pipe-geometry-head strong { color:var(--edeconsil-blue); }
+    .pipe-geometry-grid { display:grid; grid-template-columns:repeat(4,minmax(120px,1fr)); gap:8px; }
+    .pipe-geometry-stat { padding:9px 10px; border:1px solid #dfe3ef; border-radius:9px; background:#fff; }
+    .pipe-geometry-stat span { display:block; color:var(--muted); font-size:.68rem; text-transform:uppercase; letter-spacing:.035em; }
+    .pipe-geometry-stat strong { display:block; margin-top:3px; color:var(--edeconsil-blue); font-size:.9rem; }
+    .pipe-geometry-note { margin-top:10px; color:var(--muted); font-size:.72rem; line-height:1.45; }
+    .pipe-geometry-warning { margin-top:9px; padding:8px 10px; border-left:4px solid var(--edeconsil-yellow); background:#fff7d1; color:#5d4a00; font-size:.72rem; }
+    .pipe-advanced { margin-top:10px; border:1px dashed #c7cde0; border-radius:10px; background:#fff; }
+    .pipe-advanced summary { cursor:pointer; padding:10px 12px; color:var(--edeconsil-blue); font-size:.76rem; font-weight:800; }
+    .pipe-advanced .param-grid { margin:0 10px 10px; }
+    @media (max-width:760px){ .pipe-geometry-grid{grid-template-columns:1fr 1fr;} }
+    @media (max-width:500px){ .pipe-geometry-grid{grid-template-columns:1fr;} }
+
+    @media print {
+      body.print-results { background: #fff; }
+      body.print-results > :not(main), body.print-results main > :not(#simulator), body.print-results #simulator > :not(#purchaseResult) { display: none !important; }
+      body.print-results main { width: 100%; margin: 0; }
+      body.print-results #simulator, body.print-results #purchaseResult { display: block !important; margin: 0; }
+      body.print-results .result-shell { box-shadow: none; border: 0; }
+      body.print-results .result-actions { display: none; }
+      body.print-results .result-logo { width:105px; height:54px; }
+      body.print-results .table-scroll { max-height: none; overflow: visible; }
+      body.print-results th { position: static; }
+      body.print-results tr { break-inside: avoid; }
+    }
+
+    .pwa-install-btn {
+      position: fixed; right: 18px; bottom: 18px; z-index: 120;
+      min-height: 46px; padding: 10px 16px; border: 0; border-radius: 999px;
+      background: var(--edeconsil-yellow); color: var(--edeconsil-blue);
+      font: inherit; font-weight: 850; cursor: pointer;
+      box-shadow: 0 14px 34px rgba(0,11,94,.24);
+      display: none; align-items: center; gap: 8px;
+    }
+    .pwa-install-btn.show { display: inline-flex; }
+    @media (display-mode: standalone) { .pwa-install-btn { display: none !important; } }
+    @media (max-width: 500px) { .pwa-install-btn { right: 12px; bottom: 12px; } }
+  </style>
+
+  <style id="composerm-selection-guard">
+    /* ComposerM: evita seleção acidental da interface em uso normal.
+       Campos editáveis continuam selecionáveis para copiar/editar valores. */
+    html, body, body * {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    input, textarea, select, option, [contenteditable="true"], .allow-select {
+      -webkit-user-select: text;
+      user-select: text;
+      -webkit-touch-callout: default;
+    }
+  </style>
 </head>
 <body>
-<div class="loading"><div class="brand">ComposerM</div><p>Carregando aplicativo…</p></div>
-<script>
-(async()=>{
- const parts=['./payload/part-00.txt','./payload/part-01.txt','./payload/part-02.txt'];
- const chunks=await Promise.all(parts.map(p=>fetch(p).then(r=>{if(!r.ok) throw new Error(p); return r.text()})));
- const bin=atob(chunks.join(''));
- const bytes=new Uint8Array(bin.length);
- for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
- const html=new TextDecoder('utf-8').decode(bytes);
- document.open(); document.write(html); document.close();
-})().catch(err=>{
- document.body.innerHTML='<div class="loading"><div class="brand">ComposerM</div><p>Não foi possível carregar o aplicativo.</p><button onclick="location.reload()">Tentar novamente</button></div>';
- console.error(err);
-});
-</script>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-logo-wrap">
+          <img class="brand-logo" src="./icons/composerm-logo.svg" alt="Logo ComposerM">
+        </div>
+        <div>
+          <span class="brand-company">ComposerM</span>
+          <h1 id="projectTitle">CR Beira Rio</h1>
+          <p>Simulador de quantidades · Planejamento físico de materiais</p>
+        </div>
+      </div>
+      <div class="header-status">
+        <div class="status-line"><span class="status-dot"></span> Aplicativo local</div>
+        <div id="headerRange">Defina o período de planejamento</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="page active" id="simulator">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Planejamento físico por período</div>
+          <h2>Simulador de quantidades de materiais</h2>
+          <p>Edite as composições, programe as metas e consolide o suprimento necessário no intervalo informado.</p>
+        </div>
+        <div class="sim-toolbar">
+          <button class="btn-app btn-outline-app" id="addService">+ Novo serviço</button>
+          <button class="btn-app btn-outline-app" id="resetSimulator">Restaurar padrões</button>
+        </div>
+      </div>
+
+      <div class="simulator-layout">
+        <section class="compositions card-shell" aria-labelledby="compositionsTitle">
+          <div class="panel-title"><div><h3 id="compositionsTitle">Painel de Composições (Receitas)</h3><p>Serviços agrupados por categoria. Índices, unidades, valores unitários e parâmetros físicos são editáveis.</p></div><span class="pill" id="serviceCount">0 serviços</span></div>
+          <div class="composition-list" id="compositionList"></div>
+        </section>
+
+        <aside class="targets card-shell" aria-labelledby="targetsTitle">
+          <div class="panel-title"><div><h3 id="targetsTitle">Planejamento por estaqueamento</h3><p>Cadastre cada trecho separadamente, inclusive serviços repetidos.</p></div><span class="pill" id="segmentCount">0 trechos</span></div>
+          <div class="period-box">
+            <div class="field project-field"><label for="projectName">Nome da obra</label><input class="control" id="projectName" maxlength="100" placeholder="Ex.: CR Beira Rio"></div>
+            <div class="period-grid">
+              <div class="field"><label for="planningStart">Data inicial</label><input class="control" id="planningStart" type="date" required></div>
+              <div class="field"><label for="planningEnd">Data final</label><input class="control" id="planningEnd" type="date" required></div>
+            </div>
+            <div class="period-meta"><span>Rateio linear para programação de suprimentos</span><strong id="planningDays">0 dias</strong></div>
+          </div>
+          <form class="segment-form" id="segmentForm">
+            <input type="hidden" id="segmentId">
+            <div class="segment-form-grid">
+              <div class="field span-2"><label for="segmentCategory">Serviço</label><select class="control" id="segmentCategory" required></select></div>
+              <div class="field span-2"><label for="segmentService">Item</label><select class="control" id="segmentService" required></select></div>
+              <div class="field"><label for="segmentStakeStart">Estaca inicial</label><input class="control" id="segmentStakeStart" required maxlength="40" placeholder="Ex.: 120+0,00"></div>
+              <div class="field"><label for="segmentStakeEnd">Estaca final</label><input class="control" id="segmentStakeEnd" required maxlength="40" placeholder="Ex.: 145+10,00"></div>
+              <div class="field span-2"><label for="segmentSide">Lado / posição no trecho</label><select class="control" id="segmentSide" required><option value="">Selecione a posição</option><option value="right">Lado direito</option><option value="left">Lado esquerdo</option><option value="median">Canteiro central</option></select></div>
+              <div class="field"><label for="segmentQuantity">Quantidade planejada</label><input class="control num" id="segmentQuantity" type="number" min="0.0001" step="any" required placeholder="Ex.: 510"></div>
+              <div class="field"><label for="segmentUnit">Unidade da meta</label><select class="control" id="segmentUnit" required></select></div>
+              <div class="field span-2"><label for="segmentNote">Observação do trecho</label><input class="control" id="segmentNote" maxlength="120" placeholder="Ex.: frente 02, prioridade ou interferência"></div>
+            </div>
+            <div class="segment-form-actions"><button class="btn-app btn-primary-app" id="saveSegment" type="submit">+ Adicionar trecho</button><button class="btn-app btn-outline-app hidden" id="cancelSegmentEdit" type="button">Cancelar</button></div>
+          </form>
+          <div class="segment-list" id="segmentList"></div>
+          <div class="process-area">
+            <label class="round-option"><input type="checkbox" class="check" id="roundDiscrete" checked> Arredondar para cima insumos discretos (un, saco, peça e rolo)</label>
+            <button class="btn-app btn-amber" id="processList">Processar Quantidades</button>
+          </div>
+        </aside>
+      </div>
+
+      <section class="result-section" id="purchaseResult" aria-labelledby="resultTitle">
+        <div class="result-shell card-shell">
+          <div class="result-toolbar">
+            <div class="result-brand"><img class="result-logo" src="./icons/composerm-logo.svg" alt="Logo ComposerM"><div><span class="result-company">ComposerM</span><h3 id="resultTitle">CR Beira Rio · Quantitativos por Estaqueamento</h3><p id="resultTimestamp">Processe os trechos para gerar o detalhamento e o consolidado.</p></div></div>
+            <div class="result-actions">
+              <button class="btn-app btn-outline-app btn-sm-app" id="exportExcel" disabled>Exportar Excel</button>
+              <button class="btn-app btn-outline-app btn-sm-app" id="exportPdf" disabled>Imprimir / PDF</button>
+            </div>
+          </div>
+          <div class="result-summary hidden" id="resultSummary">
+            <div class="result-stat"><span>Insumos consolidados</span><strong id="resultItems">0</strong></div>
+            <div class="result-stat"><span>Trechos processados</span><strong id="resultServices">0</strong></div>
+            <div class="result-stat"><span>Período</span><strong id="resultPeriod">—</strong></div>
+            <div class="result-stat"><span>Dias corridos</span><strong id="resultDays">0</strong></div>
+            <div class="result-stat"><span>Custo estimado</span><strong id="resultCost">R$ 0,00</strong></div>
+          </div>
+          <div id="resultContent"><div class="empty-state"><strong>Nenhum trecho processado</strong>Defina o período, adicione os serviços por estaqueamento e clique em “Processar Quantidades”.</div></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="serviceDialog">
+    <form method="dialog" id="serviceForm">
+      <div class="dialog-head"><h3>Adicionar serviço</h3></div>
+      <div class="dialog-body">
+        <div class="field"><label for="newServiceName">Nome do serviço</label><input class="control" id="newServiceName" required placeholder="Ex.: Sarjeta de concreto"></div>
+        <div class="field"><label for="newServiceCategory">Categoria</label><select class="control" id="newServiceCategory"><option>Drenagem</option><option>Terraplenagem</option><option>Pavimentação</option><option>Obras Complementares</option><option>Outros</option></select></div>
+        <div class="field"><label for="newServiceEngine">Modelo de cálculo</label><select class="control" id="newServiceEngine"><option value="direct">Composição direta por unidade</option><option value="layer">Camada com largura, espessura e densidade</option><option value="pipe">Tubulação circular de concreto pré-moldado</option><option value="culvert">Aduela pré-moldada</option></select></div>
+      </div>
+      <div class="dialog-actions"><button class="btn-app btn-outline-app" id="cancelService" type="button">Cancelar</button><button class="btn-app btn-primary-app" id="confirmService" type="submit">Adicionar</button></div>
+    </form>
+  </dialog>
+
+
+  <button class="pwa-install-btn" id="installComposerM" type="button" aria-label="Instalar ComposerM">⬇ Instalar ComposerM</button>
+  <div class="toast-app" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+  "use strict";
+  const HISTORY = {"generatedAt":"2026-09-04T14:23:29Z","project":"CR Beira Rio","dateMin":"2025-04-09","dateMax":"2026-09-03","recordCount":8950,"pricedRecordCount":1185,"totalValue":2427402.82,"sources":["Concreto","Controle geral","Granulométricos","Pré-moldados"],"units":["kg","m²","m³","peça","saco","t","un"],"categories":["Drenagem","Outros","Pavimentação","Terraplenagem"],"materials":["ADUELA 1,50 × 0,60 M","ADUELA 1,50 × 1,50 M","ARAME FARPADO 1,6MM;500M","AREIA MÉDIA","AREIA PRETA","ARENOSO","BARRO","BICA CORRIDA","BLOCO 14X19X19 CM - 5 MPa","BLOCO 14X19X39","BLOCO DE VEDAÇÃO","BLOCO DE VEDAÇÃO 39X19X14CM","BLOCO ESTRUTURAL 39X19X14CM","BLOCO ESTRUTURAL 39X19X19CM","BLOCO ESTRUTURAL DE CONCRETO 19X19X39","BLOCOS 14X19X39","BOTA FORA","BRITA 0","BRITA 1","BRITA DE LASTRO","CANALETA 14X19X39","CIMENTO PORTLAND CP IV","COLUNA 10 MM","COLUNA 8MM","CONCRETO USINADO 20 MPa","EXPURGO","MATERIAL ARENOSO","MEIO-FIO 15X12 CM","MOURÃO DE CONCRETO ARMADO","MOURÃO DE CONCRETO RETO","PERFIL H","PERFIS METÁLICOS","PIÇARRA","PULMÃO","PULMÃOZINHO","PÓ DE BRITA","RACHÃO","RACHÃOZINHO","RIPA 1,20X0,5 CM","TABUAS PINUS","TAMPA DE CONCRETO - 2,30X2,10X0,20M","TAMPA DE CONCRETO - 2,30X2,10X0,20M C/ TAMPA DE AÇO","TAMPA DE CONCRETO - 2,60X1,50X0,20M","TAMPAS DE BUEIRO HEXAGONAL","TELA PARA COL. 8MM(7X14)6M","TELA PARA COLUNA 8MM","TELA PARA COLUNA 8MM (6M)","TELA SOL FN Q196 5X100X100X6M","TIJOLO 6 FUROS 9X14X19","TIJOLO CERÂMICO 06 FUROS","TIJOLO CERÂMICO 9X14X19","TIJOLO MACIÇO 23X11X5","TRELIÇA 6X4,20X4,20 (6M)","TRELIÇA 6X4,2X3,4M","TRELIÇA FNS 6X4,2X4,2 6M","TRELIÇA GERDAU 6MT","TRELIÇA TG8","TUBO DE CONCRETO 1000MM PB PA-2","TUBO DE CONCRETO 1200MM PB PA-2","TUBO DE CONCRETO 1500MM PB PA-2","TUBO DE CONCRETO 600MM PB PA-2","TUBO DE CONCRETO 800MM PB PA-2","TUBO MF - SUMIDORO"],"series":[{"month":"2025-04","material":"BARRO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":302.0,"value":0.0,"records":19,"pricedRecords":0},{"month":"2025-04","material":"BRITA 1","unit":"m³","source":"Controle geral","category":"Pavimentação","quantity":21.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-04","material":"EXPURGO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":494.0,"value":0.0,"records":33,"pricedRecords":0},{"month":"2025-04","material":"TUBO MF - SUMIDORO","unit":"un","source":"Controle geral","category":"Outros","quantity":3.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-05","material":"AREIA PRETA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":966.0,"value":0.0,"records":69,"pricedRecords":0},{"month":"2025-05","material":"ARENOSO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":2942.0,"value":0.0,"records":206,"pricedRecords":0},{"month":"2025-05","material":"BARRO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":3468.0,"value":0.0,"records":223,"pricedRecords":0},{"month":"2025-05","material":"BLOCOS 14X19X39","unit":"un","source":"Controle geral","category":"Drenagem","quantity":600.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-05","material":"BOTA FORA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":1296.0,"value":0.0,"records":11,"pricedRecords":0},{"month":"2025-05","material":"BRITA 1","unit":"m³","source":"Controle geral","category":"Pavimentação","quantity":16.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-05","material":"EXPURGO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":16.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-05","material":"PÓ DE BRITA","unit":"m³","source":"Controle geral","category":"Pavimentação","quantity":16.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-06","material":"AREIA MÉDIA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":48.0,"value":0.0,"records":3,"pricedRecords":0},{"month":"2025-06","material":"BARRO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":13744.0,"value":0.0,"records":915,"pricedRecords":0},{"month":"2025-06","material":"BLOCOS 14X19X39","unit":"un","source":"Controle geral","category":"Drenagem","quantity":3200.0,"value":0.0,"records":8,"pricedRecords":0},{"month":"2025-06","material":"BOTA FORA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":224.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2025-06","material":"BRITA 1","unit":"m³","source":"Controle geral","category":"Pavimentação","quantity":16.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-06","material":"CIMENTO PORTLAND CP IV","unit":"saco","source":"Controle geral","category":"Drenagem","quantity":300.0,"value":0.0,"records":3,"pricedRecords":0},{"month":"2025-06","material":"COLUNA 10 MM","unit":"un","source":"Controle geral","category":"Outros","quantity":25.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-06","material":"TRELIÇA TG8","unit":"un","source":"Controle geral","category":"Outros","quantity":25.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-07","material":"AREIA MÉDIA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":32.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2025-07","material":"BARRO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":13176.0,"value":0.0,"records":881,"pricedRecords":0},{"month":"2025-07","material":"BLOCOS 14X19X39","unit":"un","source":"Controle geral","category":"Drenagem","quantity":1200.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2025-07","material":"BRITA 1","unit":"m³","source":"Controle geral","category":"Pavimentação","quantity":28.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2025-07","material":"CANALETA 14X19X39","unit":"un","source":"Controle geral","category":"Drenagem","quantity":400.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-07","material":"CIMENTO PORTLAND CP IV","unit":"un","source":"Controle geral","category":"Drenagem","quantity":150.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2025-07","material":"COLUNA 8MM","unit":"un","source":"Controle geral","category":"Outros","quantity":27.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-07","material":"PIÇARRA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":42.0,"value":0.0,"records":3,"pricedRecords":0},{"month":"2025-07","material":"RACHÃO","unit":"m³","source":"Controle geral","category":"Pavimentação","quantity":28.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2025-07","material":"RIPA 1,20X0,5 CM","unit":"un","source":"Controle geral","category":"Outros","quantity":30.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-07","material":"TRELIÇA TG8","unit":"un","source":"Controle geral","category":"Outros","quantity":27.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-08","material":"ARAME FARPADO 1,6MM;500M","unit":"un","source":"Controle geral","category":"Outros","quantity":3.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-08","material":"AREIA MÉDIA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":176.0,"value":0.0,"records":11,"pricedRecords":0},{"month":"2025-08","material":"BARRO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":14176.0,"value":0.0,"records":936,"pricedRecords":0},{"month":"2025-08","material":"BICA CORRIDA","unit":"t","source":"Controle geral","category":"Pavimentação","quantity":185.66,"value":0.0,"records":6,"pricedRecords":0},{"month":"2025-08","material":"BLOCO 14X19X19 CM - 5 MPa","unit":"un","source":"Controle geral","category":"Drenagem","quantity":300.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-08","material":"BLOCO DE VEDAÇÃO 39X19X14CM","unit":"un","source":"Controle geral","category":"Drenagem","quantity":720.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-08","material":"BOTA FORA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":1986.0,"value":0.0,"records":138,"pricedRecords":0},{"month":"2025-08","material":"BRITA 1","unit":"m³","source":"Controle geral","category":"Pavimentação","quantity":28.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2025-08","material":"BRITA DE LASTRO","unit":"t","source":"Controle geral","category":"Pavimentação","quantity":497.44,"value":0.0,"records":17,"pricedRecords":0},{"month":"2025-08","material":"CIMENTO PORTLAND CP IV","unit":"un","source":"Controle geral","category":"Drenagem","quantity":200.0,"value":0.0,"records":3,"pricedRecords":0},{"month":"2025-08","material":"TABUAS PINUS","unit":"un","source":"Controle geral","category":"Outros","quantity":36.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-08","material":"TIJOLO 6 FUROS 9X14X19","unit":"un","source":"Controle geral","category":"Drenagem","quantity":12000.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-09","material":"AREIA MÉDIA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":62.0,"value":0.0,"records":4,"pricedRecords":0},{"month":"2025-09","material":"BARRO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":7812.0,"value":0.0,"records":514,"pricedRecords":0},{"month":"2025-09","material":"BICA CORRIDA","unit":"t","source":"Controle geral","category":"Pavimentação","quantity":2680.44,"value":0.0,"records":92,"pricedRecords":0},{"month":"2025-09","material":"BLOCO DE VEDAÇÃO","unit":"un","source":"Controle geral","category":"Drenagem","quantity":4560.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2025-09","material":"BOTA FORA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":560.0,"value":0.0,"records":40,"pricedRecords":0},{"month":"2025-09","material":"BRITA DE LASTRO","unit":"m³","source":"Controle geral","category":"Pavimentação","quantity":92.203,"value":0.0,"records":3,"pricedRecords":0},{"month":"2025-09","material":"BRITA DE LASTRO","unit":"t","source":"Controle geral","category":"Pavimentação","quantity":1566.57,"value":0.0,"records":54,"pricedRecords":0},{"month":"2025-09","material":"CIMENTO PORTLAND CP IV","unit":"un","source":"Controle geral","category":"Drenagem","quantity":200.0,"value":0.0,"records":4,"pricedRecords":0},{"month":"2025-09","material":"MEIO-FIO 15X12 CM","unit":"un","source":"Controle geral","category":"Outros","quantity":400.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-09","material":"MOURÃO DE CONCRETO ARMADO","unit":"m³","source":"Controle geral","category":"Drenagem","quantity":100.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-09","material":"MOURÃO DE CONCRETO RETO","unit":"m³","source":"Controle geral","category":"Drenagem","quantity":10.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-09","material":"PIÇARRA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":1664.0,"value":0.0,"records":108,"pricedRecords":0},{"month":"2025-09","material":"PULMÃOZINHO","unit":"t","source":"Controle geral","category":"Pavimentação","quantity":35.88,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-09","material":"TELA PARA COLUNA 8MM (6M)","unit":"t","source":"Controle geral","category":"Outros","quantity":50.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-09","material":"TIJOLO 6 FUROS 9X14X19","unit":"un","source":"Controle geral","category":"Drenagem","quantity":12000.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-09","material":"TIJOLO MACIÇO 23X11X5","unit":"un","source":"Controle geral","category":"Drenagem","quantity":500.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-09","material":"TRELIÇA 6X4,20X4,20 (6M)","unit":"t","source":"Controle geral","category":"Outros","quantity":50.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-10","material":"AREIA MÉDIA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":64.0,"value":0.0,"records":4,"pricedRecords":0},{"month":"2025-10","material":"BARRO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":5964.0,"value":0.0,"records":393,"pricedRecords":0},{"month":"2025-10","material":"BICA CORRIDA","unit":"t","source":"Controle geral","category":"Pavimentação","quantity":1637.98,"value":0.0,"records":59,"pricedRecords":0},{"month":"2025-10","material":"BLOCO DE VEDAÇÃO 39X19X14CM","unit":"un","source":"Controle geral","category":"Drenagem","quantity":2280.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-10","material":"BLOCO ESTRUTURAL 39X19X14CM","unit":"un","source":"Controle geral","category":"Drenagem","quantity":1482.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2025-10","material":"BLOCO ESTRUTURAL 39X19X19CM","unit":"un","source":"Controle geral","category":"Drenagem","quantity":540.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-10","material":"BRITA 0","unit":"t","source":"Controle geral","category":"Pavimentação","quantity":28.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2025-10","material":"BRITA DE LASTRO","unit":"t","source":"Controle geral","category":"Pavimentação","quantity":84.5,"value":0.0,"records":3,"pricedRecords":0},{"month":"2025-10","material":"CANALETA 14X19X39","unit":"un","source":"Controle geral","category":"Drenagem","quantity":1520.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2025-10","material":"CIMENTO PORTLAND CP IV","unit":"t","source":"Controle geral","category":"Drenagem","quantity":50.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-10","material":"CIMENTO PORTLAND CP IV","unit":"un","source":"Controle geral","category":"Drenagem","quantity":500.0,"value":0.0,"records":8,"pricedRecords":0},{"month":"2025-10","material":"CONCRETO USINADO 20 MPa","unit":"m³","source":"Controle geral","category":"Drenagem","quantity":15.0,"value":0.0,"records":3,"pricedRecords":0},{"month":"2025-10","material":"PERFIL H","unit":"kg","source":"Controle geral","category":"Outros","quantity":5820.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-10","material":"PIÇARRA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":3012.0,"value":0.0,"records":196,"pricedRecords":0},{"month":"2025-10","material":"PULMÃOZINHO","unit":"t","source":"Controle geral","category":"Pavimentação","quantity":1493.02,"value":0.0,"records":52,"pricedRecords":0},{"month":"2025-10","material":"TELA PARA COL. 8MM(7X14)6M","unit":"peça","source":"Controle geral","category":"Outros","quantity":100.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-10","material":"TELA SOL FN Q196 5X100X100X6M","unit":"peça","source":"Controle geral","category":"Outros","quantity":50.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-10","material":"TIJOLO CERÂMICO 06 FUROS","unit":"un","source":"Controle geral","category":"Drenagem","quantity":12000.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-10","material":"TRELIÇA FNS 6X4,2X4,2 6M","unit":"peça","source":"Controle geral","category":"Outros","quantity":100.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-11","material":"AREIA MÉDIA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":80.0,"value":0.0,"records":5,"pricedRecords":0},{"month":"2025-11","material":"ARENOSO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":118.0,"value":0.0,"records":8,"pricedRecords":0},{"month":"2025-11","material":"BARRO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":5436.0,"value":0.0,"records":359,"pricedRecords":0},{"month":"2025-11","material":"BICA CORRIDA","unit":"m³","source":"Controle geral","category":"Pavimentação","quantity":134.92,"value":0.0,"records":5,"pricedRecords":0},{"month":"2025-11","material":"BICA CORRIDA","unit":"t","source":"Controle geral","category":"Pavimentação","quantity":562.02,"value":0.0,"records":20,"pricedRecords":0},{"month":"2025-11","material":"CIMENTO PORTLAND CP IV","unit":"m³","source":"Controle geral","category":"Drenagem","quantity":100.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2025-11","material":"CIMENTO PORTLAND CP IV","unit":"un","source":"Controle geral","category":"Drenagem","quantity":150.0,"value":0.0,"records":3,"pricedRecords":0},{"month":"2025-11","material":"PULMÃOZINHO","unit":"m³","source":"Controle geral","category":"Pavimentação","quantity":254.13,"value":0.0,"records":9,"pricedRecords":0},{"month":"2025-11","material":"PULMÃOZINHO","unit":"t","source":"Controle geral","category":"Pavimentação","quantity":394.98,"value":0.0,"records":14,"pricedRecords":0},{"month":"2025-11","material":"TRELIÇA GERDAU 6MT","unit":"un","source":"Controle geral","category":"Outros","quantity":50.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2025-12","material":"BARRO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":9288.0,"value":0.0,"records":618,"pricedRecords":0},{"month":"2025-12","material":"PULMÃOZINHO","unit":"m³","source":"Controle geral","category":"Pavimentação","quantity":82.26,"value":0.0,"records":2,"pricedRecords":0},{"month":"2025-12","material":"PULMÃOZINHO","unit":"t","source":"Controle geral","category":"Pavimentação","quantity":84.4,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-01","material":"ADUELA 1,50 × 0,60 M","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":13.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-01","material":"AREIA MÉDIA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":64.0,"value":0.0,"records":4,"pricedRecords":0},{"month":"2026-01","material":"BARRO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":9050.0,"value":0.0,"records":597,"pricedRecords":0},{"month":"2026-01","material":"BICA CORRIDA","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":136.8,"value":5608.8,"records":5,"pricedRecords":5},{"month":"2026-01","material":"BLOCO 14X19X39","unit":"un","source":"Controle geral","category":"Drenagem","quantity":912.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-01","material":"CIMENTO PORTLAND CP IV","unit":"un","source":"Controle geral","category":"Drenagem","quantity":150.0,"value":0.0,"records":3,"pricedRecords":0},{"month":"2026-01","material":"MATERIAL ARENOSO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":654.0,"value":0.0,"records":43,"pricedRecords":0},{"month":"2026-01","material":"PULMÃO","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":234.06,"value":14327.98,"records":9,"pricedRecords":9},{"month":"2026-01","material":"PULMÃOZINHO","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":2214.8,"value":139918.12,"records":68,"pricedRecords":68},{"month":"2026-01","material":"TUBO DE CONCRETO 1000MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":16.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-02","material":"ADUELA 1,50 × 0,60 M","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":85.0,"value":0.0,"records":8,"pricedRecords":0},{"month":"2026-02","material":"AREIA MÉDIA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":106.0,"value":0.0,"records":7,"pricedRecords":0},{"month":"2026-02","material":"BARRO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":1706.0,"value":0.0,"records":112,"pricedRecords":0},{"month":"2026-02","material":"BICA CORRIDA","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":77.78,"value":3188.98,"records":3,"pricedRecords":3},{"month":"2026-02","material":"BRITA DE LASTRO","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":226.08,"value":13112.64,"records":9,"pricedRecords":9},{"month":"2026-02","material":"CIMENTO PORTLAND CP IV","unit":"un","source":"Controle geral","category":"Drenagem","quantity":250.0,"value":0.0,"records":4,"pricedRecords":0},{"month":"2026-02","material":"CONCRETO USINADO 20 MPa","unit":"m³","source":"Concreto","category":"Drenagem","quantity":71.0,"value":40115.0,"records":14,"pricedRecords":14},{"month":"2026-02","material":"MATERIAL ARENOSO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":56.0,"value":0.0,"records":4,"pricedRecords":0},{"month":"2026-02","material":"PULMÃO","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":467.86,"value":30410.9,"records":18,"pricedRecords":18},{"month":"2026-02","material":"PULMÃOZINHO","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":1519.64,"value":95737.32,"records":59,"pricedRecords":59},{"month":"2026-02","material":"RACHÃOZINHO","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":1004.44,"value":66293.04,"records":39,"pricedRecords":39},{"month":"2026-02","material":"TIJOLO CERÂMICO 9X14X19","unit":"un","source":"Controle geral","category":"Drenagem","quantity":12000.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-02","material":"TUBO DE CONCRETO 600MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":148.0,"value":0.0,"records":5,"pricedRecords":0},{"month":"2026-03","material":"ADUELA 1,50 × 0,60 M","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":23.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-03","material":"AREIA MÉDIA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":48.0,"value":0.0,"records":3,"pricedRecords":0},{"month":"2026-03","material":"BARRO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":98.0,"value":0.0,"records":7,"pricedRecords":0},{"month":"2026-03","material":"CIMENTO PORTLAND CP IV","unit":"un","source":"Controle geral","category":"Drenagem","quantity":150.0,"value":0.0,"records":3,"pricedRecords":0},{"month":"2026-03","material":"MATERIAL ARENOSO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":144.0,"value":0.0,"records":9,"pricedRecords":0},{"month":"2026-03","material":"PULMÃOZINHO","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":415.02,"value":26146.26,"records":16,"pricedRecords":16},{"month":"2026-03","material":"RACHÃOZINHO","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":357.4,"value":23588.4,"records":14,"pricedRecords":14},{"month":"2026-03","material":"TELA PARA COLUNA 8MM","unit":"un","source":"Controle geral","category":"Outros","quantity":20.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-03","material":"TRELIÇA 6X4,2X3,4M","unit":"un","source":"Controle geral","category":"Outros","quantity":20.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-03","material":"TUBO DE CONCRETO 1200MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":68.0,"value":0.0,"records":6,"pricedRecords":0},{"month":"2026-04","material":"AREIA MÉDIA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":122.0,"value":0.0,"records":8,"pricedRecords":0},{"month":"2026-04","material":"BICA CORRIDA","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":749.58,"value":31990.76,"records":28,"pricedRecords":28},{"month":"2026-04","material":"BLOCO ESTRUTURAL DE CONCRETO 19X19X39","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":2330.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-04","material":"CIMENTO PORTLAND CP IV","unit":"un","source":"Controle geral","category":"Drenagem","quantity":200.0,"value":0.0,"records":3,"pricedRecords":0},{"month":"2026-04","material":"CONCRETO USINADO 20 MPa","unit":"m³","source":"Concreto","category":"Drenagem","quantity":53.0,"value":29945.0,"records":10,"pricedRecords":10},{"month":"2026-04","material":"PULMÃOZINHO","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":3045.42,"value":205992.96,"records":116,"pricedRecords":116},{"month":"2026-04","material":"TUBO DE CONCRETO 1200MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":161.0,"value":0.0,"records":22,"pricedRecords":0},{"month":"2026-04","material":"TUBO DE CONCRETO 600MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":42.0,"value":0.0,"records":3,"pricedRecords":0},{"month":"2026-05","material":"AREIA MÉDIA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":28.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-05","material":"BICA CORRIDA","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":250.5,"value":10771.5,"records":9,"pricedRecords":9},{"month":"2026-05","material":"BLOCO ESTRUTURAL DE CONCRETO 19X19X39","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":684.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-05","material":"CIMENTO PORTLAND CP IV","unit":"un","source":"Controle geral","category":"Drenagem","quantity":200.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-05","material":"CONCRETO USINADO 20 MPa","unit":"m³","source":"Concreto","category":"Drenagem","quantity":74.0,"value":41810.0,"records":11,"pricedRecords":11},{"month":"2026-05","material":"PULMÃOZINHO","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":3246.28,"value":227239.6,"records":118,"pricedRecords":118},{"month":"2026-05","material":"RACHÃOZINHO","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":782.64,"value":51654.24,"records":29,"pricedRecords":29},{"month":"2026-05","material":"TAMPA DE CONCRETO - 2,30X2,10X0,20M","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":2.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-05","material":"TAMPA DE CONCRETO - 2,30X2,10X0,20M C/ TAMPA DE AÇO","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":1.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-05","material":"TUBO DE CONCRETO 1200MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":225.0,"value":0.0,"records":31,"pricedRecords":0},{"month":"2026-06","material":"AREIA MÉDIA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":48.0,"value":0.0,"records":3,"pricedRecords":0},{"month":"2026-06","material":"BARRO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":1168.0,"value":0.0,"records":73,"pricedRecords":0},{"month":"2026-06","material":"BICA CORRIDA","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":412.19,"value":17412.8,"records":15,"pricedRecords":15},{"month":"2026-06","material":"BRITA DE LASTRO","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":86.86,"value":5382.28,"records":3,"pricedRecords":3},{"month":"2026-06","material":"CIMENTO PORTLAND CP IV","unit":"un","source":"Controle geral","category":"Drenagem","quantity":100.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-06","material":"CONCRETO USINADO 20 MPa","unit":"m³","source":"Concreto","category":"Drenagem","quantity":48.0,"value":27120.0,"records":8,"pricedRecords":8},{"month":"2026-06","material":"PULMÃOZINHO","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":1810.8,"value":126756.0,"records":67,"pricedRecords":67},{"month":"2026-06","material":"RACHÃOZINHO","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":3077.41,"value":203109.06,"records":113,"pricedRecords":113},{"month":"2026-06","material":"TAMPA DE CONCRETO - 2,30X2,10X0,20M","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":2.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-06","material":"TAMPAS DE BUEIRO HEXAGONAL","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":8.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-06","material":"TUBO DE CONCRETO 1200MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":200.0,"value":0.0,"records":15,"pricedRecords":0},{"month":"2026-06","material":"TUBO DE CONCRETO 600MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":90.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-07","material":"ADUELA 1,50 × 1,50 M","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":2.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-07","material":"AREIA MÉDIA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":32.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-07","material":"BARRO","unit":"m²","source":"Controle geral","category":"Terraplenagem","quantity":74.0,"value":0.0,"records":5,"pricedRecords":0},{"month":"2026-07","material":"BARRO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":3888.0,"value":0.0,"records":257,"pricedRecords":0},{"month":"2026-07","material":"BICA CORRIDA","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":7161.51,"value":307944.93,"records":173,"pricedRecords":173},{"month":"2026-07","material":"BLOCO ESTRUTURAL DE CONCRETO 19X19X39","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":1080.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-07","material":"BRITA DE LASTRO","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":1968.69,"value":127964.85,"records":47,"pricedRecords":47},{"month":"2026-07","material":"CIMENTO PORTLAND CP IV","unit":"un","source":"Controle geral","category":"Drenagem","quantity":200.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-07","material":"CONCRETO USINADO 20 MPa","unit":"m³","source":"Concreto","category":"Drenagem","quantity":142.0,"value":80230.0,"records":23,"pricedRecords":23},{"month":"2026-07","material":"PIÇARRA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":434.0,"value":0.0,"records":28,"pricedRecords":0},{"month":"2026-07","material":"PULMÃOZINHO","unit":"t","source":"Granulométricos","category":"Pavimentação","quantity":5733.02,"value":401311.4,"records":140,"pricedRecords":140},{"month":"2026-07","material":"TAMPA DE CONCRETO - 2,30X2,10X0,20M","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":4.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-07","material":"TUBO DE CONCRETO 1200MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":20.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-07","material":"TUBO DE CONCRETO 600MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":12.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-07","material":"TUBO DE CONCRETO 800MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":120.0,"value":0.0,"records":3,"pricedRecords":0},{"month":"2026-08","material":"ADUELA 1,50 × 0,60 M","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":1.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-08","material":"ADUELA 1,50 × 1,50 M","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":21.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-08","material":"AREIA MÉDIA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":64.0,"value":0.0,"records":4,"pricedRecords":0},{"month":"2026-08","material":"BARRO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":1112.0,"value":0.0,"records":75,"pricedRecords":0},{"month":"2026-08","material":"BLOCO ESTRUTURAL DE CONCRETO 19X19X39","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":1440.0,"value":0.0,"records":3,"pricedRecords":0},{"month":"2026-08","material":"BRITA 0","unit":"m³","source":"Controle geral","category":"Pavimentação","quantity":36.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-08","material":"CIMENTO PORTLAND CP IV","unit":"un","source":"Controle geral","category":"Drenagem","quantity":100.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-08","material":"CONCRETO USINADO 20 MPa","unit":"m³","source":"Concreto","category":"Drenagem","quantity":128.0,"value":72320.0,"records":21,"pricedRecords":21},{"month":"2026-08","material":"MATERIAL ARENOSO","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":248.0,"value":0.0,"records":16,"pricedRecords":0},{"month":"2026-08","material":"PERFIS METÁLICOS","unit":"kg","source":"Controle geral","category":"Outros","quantity":32592.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-08","material":"PIÇARRA","unit":"m³","source":"Controle geral","category":"Terraplenagem","quantity":2962.0,"value":0.0,"records":192,"pricedRecords":0},{"month":"2026-08","material":"TAMPA DE CONCRETO - 2,30X2,10X0,20M","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":2.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-08","material":"TAMPA DE CONCRETO - 2,60X1,50X0,20M","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":2.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-08","material":"TUBO DE CONCRETO 1000MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":52.0,"value":0.0,"records":4,"pricedRecords":0},{"month":"2026-08","material":"TUBO DE CONCRETO 1200MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":238.0,"value":0.0,"records":17,"pricedRecords":0},{"month":"2026-08","material":"TUBO DE CONCRETO 1500MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":24.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-08","material":"TUBO DE CONCRETO 600MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":123.0,"value":0.0,"records":6,"pricedRecords":0},{"month":"2026-08","material":"TUBO DE CONCRETO 800MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":89.0,"value":0.0,"records":4,"pricedRecords":0},{"month":"2026-09","material":"ADUELA 1,50 × 0,60 M","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":1.0,"value":0.0,"records":1,"pricedRecords":0},{"month":"2026-09","material":"ADUELA 1,50 × 1,50 M","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":12.0,"value":0.0,"records":2,"pricedRecords":0},{"month":"2026-09","material":"TUBO DE CONCRETO 1200MM PB PA-2","unit":"un","source":"Pré-moldados","category":"Drenagem","quantity":28.0,"value":0.0,"records":2,"pricedRecords":0}],"priceCatalog":[{"material":"BICA CORRIDA","unit":"t","avgPrice":42.8883,"lastMonth":"2026-07"},{"material":"BRITA DE LASTRO","unit":"t","avgPrice":64.1909,"lastMonth":"2026-07"},{"material":"CONCRETO USINADO 20 MPa","unit":"m³","avgPrice":565.0,"lastMonth":"2026-08"},{"material":"PULMÃO","unit":"t","avgPrice":63.7379,"lastMonth":"2026-02"},{"material":"PULMÃOZINHO","unit":"t","avgPrice":68.0068,"lastMonth":"2026-07"},{"material":"RACHÃOZINHO","unit":"t","avgPrice":66.0,"lastMonth":"2026-06"}]};
+
+  const PIPE_DIAMETERS = [600,800,1000,1200,1500];
+  const PIPE_CLASSES = ["PS1","PS2","PA1","PA2","PA3","PA4"];
+  const PIPE_JOINTS = [["PB","Ponta e bolsa (PB)"],["MF","Macho e fêmea (MF)"]];
+  const PIPE_DEFAULTS = [[600,"PA2"],[800,"PA2"],[1000,"PA2"],[1200,"PA2"],[1500,"PA2"]];
+  // ABNT NBR 8890:2007 — Tabela A.1, águas pluviais, encaixe Ponta e Bolsa (PB), tubo armado.
+  // wallMinMm é a espessura mínima da menor classe prevista na norma; PA2 deve ser confirmado pelo projeto/fabricante.
+  const PIPE_PB_NBR = {
+    600:{usefulLengthMm:1000,bellLengthMm:75,clearanceMm:40,wallMinMm:60},
+    800:{usefulLengthMm:1000,bellLengthMm:80,clearanceMm:40,wallMinMm:72},
+    1000:{usefulLengthMm:1000,bellLengthMm:80,clearanceMm:40,wallMinMm:80},
+    1200:{usefulLengthMm:1000,bellLengthMm:90,clearanceMm:50,wallMinMm:96},
+    1500:{usefulLengthMm:1000,bellLengthMm:90,clearanceMm:60,wallMinMm:120}
+  };
+
+  function pipePbNorm(diameter){ return PIPE_PB_NBR[Number(diameter)] || PIPE_PB_NBR[600]; }
+
+  const CULVERT_DEFAULTS = [[1.50,.60],[1.50,1.50]];
+  const WALL_MASONRY_TYPES = {
+    ceramic:{label:"Alvenaria cerâmica — tijolo 9×14×19",material:"Tijolo cerâmico 9×14×19",defaultRate:33.33},
+    structural:{label:"Alvenaria estrutural — bloco 19×19×39",material:"Bloco estrutural 19×19×39",defaultRate:12.5}
+  };
+  const CULVERT_MOUTH_CONCRETE = {
+    600:{0:1.153,15:1.218,30:1.380,45:1.722},
+    800:{0:2.140,15:2.262,30:2.539,45:3.188},
+    1000:{0:3.567,15:3.757,30:4.205,45:5.293},
+    1200:{0:5.506,15:5.819,30:6.536,45:8.243},
+    1500:{0:10.810,15:11.431,30:12.868,45:16.303}
+  };
+
+  function pipeClassLabel(value) {
+    return String(value || "PA2").replace(/^([A-Z]+)(\d+)$/i,"$1-$2").toUpperCase();
+  }
+
+  function makePipeService(diameter=600, classCode="PA2", joint="PB") {
+    const d = Number(diameter) || 600;
+    const cls = PIPE_CLASSES.includes(classCode) ? classCode : "PA2";
+    const j = PIPE_JOINTS.some(item=>item[0]===joint) ? joint : "PB";
+    return {
+      id: `tubulacao-${d}-${cls.toLowerCase()}-${j.toLowerCase()}`,
+      name: `Tubulação de concreto Ø ${d} mm — ${pipeClassLabel(cls)} ${j}`,
+      category: "Drenagem", engine: "pipe", enabled: true, target: 0, targetUnit: "m",
+      params: (()=>{ const n=pipePbNorm(d); return {diameter:d, classCode:cls, joint:"PB", pipeLength:n.usefulLengthMm/1000, lossPercent:2,
+        beddingWidth:0,beddingHeight:0,counterBeddingWidth:0,counterBeddingHeight:0,
+        wallThickness:n.wallMinMm/1000,bellLength:n.bellLengthMm/1000,clearance:n.clearanceMm/1000,
+        bellOuterDiameter:0,transitionLength:n.bellLengthMm/1000}; })(),
+      materials: [
+        {name:`Tubo de concreto ${d}mm ${j} ${pipeClassLabel(cls)}`, coefficient:1, basis:"pieces", unit:"un", price:0},
+        {name:"Concreto 20 MPa para berço", coefficient:1, basis:"bedding", unit:"m³", price:0},
+        {name:"Concreto 20 MPa para contraberço", coefficient:1, basis:"counterBedding", unit:"m³", price:0}
+      ]
+    };
+  }
+
+  function dimensionLabel(value) {
+    return Number(value||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+
+  function makeCulvertService(width=1.50,height=.60) {
+    const w=Math.max(.01,Number(width)||1.50),h=Math.max(.01,Number(height)||.60);
+    return {
+      id:`aduela-${Math.round(w*100)}x${Math.round(h*100)}`,
+      name:`Aduela pré-moldada ${dimensionLabel(w)} × ${dimensionLabel(h)} m`,
+      category:"Drenagem",engine:"culvert",enabled:true,target:0,targetUnit:"m",
+      params:{width:w,height:h,pieceLength:1,lossPercent:2,beddingRate:0,wallThickness:.15,bidimBandWidth:.20,bidimExtra:.50},
+      materials:[
+        {name:`Aduela ${dimensionLabel(w)} × ${dimensionLabel(h)} m`,coefficient:1,basis:"pieces",unit:"un",price:0},
+        {name:"Concreto 20 MPa para berço",coefficient:1,basis:"bedding",unit:"m³",price:0},
+        {name:"Geotêxtil Bidim para juntas de aduela",coefficient:1,basis:"bidim",unit:"m²",price:0}
+      ]
+    };
+  }
+
+  function makeCatchBasinService() {
+    return {id:"boca-lobo",name:"Boca de lobo",category:"Drenagem",engine:"catchBasin",enabled:true,target:0,targetUnit:"un",params:{width:1,length:1,depth:1,blockRate:14,concretePerBlock:.00741,pillarsPerUnit:4,guidesPerUnit:2,bottomThickness:.20,beltWidth:.20,beltHeight:.20},materials:[
+      {name:"Bloco estrutural 19×19×39",coefficient:1,basis:"blocks",unit:"un",price:0},
+      {name:"Concreto 20 MPa",coefficient:1,basis:"concrete",unit:"m³",price:0},
+      {name:"Pilar para boca de lobo",coefficient:1,basis:"pillars",unit:"un",price:0},
+      {name:"Guia chapéu para boca de lobo",coefficient:1,basis:"guides",unit:"un",price:0},
+      {name:"Treliça",coefficient:1,basis:"trellis",unit:"m",price:0}
+    ]};
+  }
+
+  function makeClpService() {
+    return {id:"clp",name:"Caixa de ligação e passagem (CLP)",category:"Drenagem",engine:"clp",enabled:true,target:0,targetUnit:"un",params:{width:1,length:1,depth:1,blockRate:14,concretePerBlock:.00741,pillarsPerUnit:4,bottomThickness:.20,beltWidth:.20,beltHeight:.20},materials:[
+      {name:"Bloco estrutural 19×19×39",coefficient:1,basis:"blocks",unit:"un",price:0},
+      {name:"Concreto 20 MPa",coefficient:1,basis:"concrete",unit:"m³",price:0},
+      {name:"Pilar para CLP",coefficient:1,basis:"pillars",unit:"un",price:0},
+      {name:"Treliça",coefficient:1,basis:"trellis",unit:"m",price:0}
+    ]};
+  }
+
+  function makeManholeService() {
+    return {id:"poco-visita",name:"Poço de visita com tubo DN 800",category:"Drenagem",engine:"manhole",enabled:true,target:0,targetUnit:"un",params:{height:1.50,pipeLength:1},materials:[
+      {name:"Tubo de concreto 800mm PB PA-2",coefficient:1,basis:"pieces",unit:"un",price:0},
+      {name:"Tampa de aço para poço de visita",coefficient:1,basis:"lids",unit:"un",price:0}
+    ]};
+  }
+
+  function makeSurfaceTreatmentService(id,name,rate) {
+    return {id,name,category:"Pavimentação",engine:"surface",enabled:true,target:0,targetUnit:"m",params:{width:7,applicationRate:rate},materials:[{name:`Ligante asfáltico para ${name.toLowerCase()}`,coefficient:1,basis:"mass",unit:"t",price:0}]};
+  }
+
+  function makeAsphaltCoatingService(id,name,reference) {
+    return {id,name,category:"Pavimentação",engine:"asphaltCoating",enabled:true,target:0,targetUnit:"m",reference,params:{width:7,binderRate:0,aggregateRate:0},materials:[
+      {name:`Ligante asfáltico para ${name}`,coefficient:1,basis:"binderMass",unit:"t",price:0},
+      {name:`Agregado mineral para ${name}`,coefficient:1,basis:"aggregateMass",unit:"t",price:0}
+    ]};
+  }
+
+  function makeWallService() {
+    return {id:"muro-alvenaria",name:"Muro de alvenaria",category:"Obras Complementares",engine:"wall",enabled:true,target:0,targetUnit:"m",params:{masonryType:"ceramic",height:2.60,blockRate:33.33,pillarWidth:.15,pillarThickness:.20,beltWidth:.15,beltHeight:.20,foundationWidth:.30,foundationHeight:.30},materials:[
+      {name:"Tijolo cerâmico 9×14×19",coefficient:1,basis:"blocks",unit:"un",price:0},
+      {name:"Concreto 20 MPa",coefficient:1,basis:"concrete",unit:"m³",price:0},
+      {name:"Concreto ciclópico para baldrame",coefficient:1,basis:"foundation",unit:"m³",price:0},
+      {name:"Coluna POP",coefficient:1,basis:"pillars",unit:"un",price:0},
+      {name:"Treliça",coefficient:1,basis:"trellis",unit:"m",price:0}
+    ]};
+  }
+
+  function makeLinearConcreteService(id,name,engine,width,thickness,category="Obras Complementares") {
+    return {id,name,category,engine,enabled:true,target:0,targetUnit:"m",params:{width,thickness},materials:[{name:"Concreto 20 MPa",coefficient:1,basis:"volume",unit:"m³",price:0}]};
+  }
+
+  function makeCurbService() {
+    return {id:"meio-fio",name:"Meio-fio pré-moldado 0,80 m",category:"Drenagem",engine:"curb",enabled:true,target:0,targetUnit:"m",params:{pieceLength:.80},materials:[{name:"Meio-fio pré-moldado 0,80 m",coefficient:1,basis:"pieces",unit:"un",price:0}]};
+  }
+
+  function makeCulvertMouthService() {
+    return {id:"boca-bueiro-dnit",name:"Boca de bueiro simples tubular — DNIT",category:"Drenagem",engine:"culvertMouth",enabled:true,target:0,targetUnit:"un",params:{diameter:1000,skew:0},materials:[{name:"Concreto 20 MPa para boca de bueiro",coefficient:1,basis:"concrete",unit:"m³",price:0}]};
+  }
+
+  const DEFAULT_SERVICES = [
+    makeCatchBasinService(),
+    makeClpService(),
+    makeManholeService(),
+    ...PIPE_DEFAULTS.map(([diameter,classCode])=>makePipeService(diameter,classCode,"PB")),
+    ...CULVERT_DEFAULTS.map(([width,height])=>makeCulvertService(width,height)),
+    makeCulvertMouthService(),
+    {
+      id: "desmatamento", name: "Desmatamento e limpeza", category: "Terraplenagem", engine: "direct", enabled: true, target: 0, targetUnit: "m²",
+      params: {}, materials: [
+        {name:"Desmatamento e limpeza", coefficient:1, basis:"meta", unit:"m²", price:0}
+      ]
+    },
+    {
+      id: "aterro", name: "Aterro compactado", category: "Terraplenagem", engine: "layer", enabled: true, target: 0, targetUnit: "m³",
+      params: {width:10, thickness:0.20, density:1.80, supplyFactor:1.25}, materials: [
+        {name:"Material de aterro", coefficient:1, basis:"volume", unit:"m³", price:null}
+      ]
+    },
+    {
+      id: "regularizacao-subleito", name: "Regularização do subleito", category: "Pavimentação", engine: "direct", enabled: true, target: 0, targetUnit: "m²",
+      params: {}, materials: [
+        {name:"Regularização do subleito", coefficient:1, basis:"meta", unit:"m²", price:0}
+      ]
+    },
+    {
+      id: "sub-base", name: "Sub-base granular", category: "Pavimentação", engine: "layer", enabled: true, target: 0, targetUnit: "m³",
+      params: {width:7.20, thickness:0.20, density:1.95, supplyFactor:1.12}, materials: [
+        {name:"Bica corrida", coefficient:1, basis:"mass", unit:"t", price:null}
+      ]
+    },
+    {
+      id: "base", name: "Base granular", category: "Pavimentação", engine: "layer", enabled: true, target: 0, targetUnit: "m³",
+      params: {width:7.20, thickness:0.15, density:2.05, supplyFactor:1.10}, materials: [
+        {name:"Brita graduada", coefficient:1, basis:"mass", unit:"t", price:null}
+      ]
+    },
+    {
+      id: "cbuq", name: "Revestimento asfáltico CBUQ", category: "Pavimentação", engine: "layer", enabled: true, target: 0, targetUnit: "km",
+      params: {width:7.00, thickness:0.05, density:2.40, supplyFactor:1.03}, materials: [
+        {name:"CBUQ", coefficient:1, basis:"mass", unit:"t", price:null}
+      ]
+    },
+    makeSurfaceTreatmentService("imprimacao","Imprimação",.0012),
+    makeSurfaceTreatmentService("pintura-ligacao","Pintura de ligação",.0005),
+    makeAsphaltCoatingService("tss","Tratamento superficial simples (TSS)","DNIT 146/2012-ES"),
+    makeAsphaltCoatingService("tsd","Tratamento superficial duplo (TSD)","DNIT 147/2012-ES"),
+    makeAsphaltCoatingService("tst","Tratamento superficial triplo (TST)","DNIT 148/2012-ES"),
+    makeAsphaltCoatingService("lama-asfaltica","Lama asfáltica","DNIT 150/2010-ES"),
+    makeAsphaltCoatingService("microrrevestimento","Microrrevestimento asfáltico a frio","DNIT 035/2026-ES"),
+    makeAsphaltCoatingService("capa-selante","Capa selante","DNIT 464/2026-ES"),
+    makeWallService(),
+    makeLinearConcreteService("calcada","Calçada de concreto","sidewalk",1.50,.08,"Pavimentação"),
+    makeCurbService(),
+    makeLinearConcreteService("sarjeta","Sarjeta de concreto","gutter",.30,.10,"Drenagem")
+  ];
+
+  const els = {};
+  const chartInstances = {};
+  let services = [];
+  let segments = [];
+  const openServiceIds = new Set();
+  const openCompositionCategories = new Set();
+  let lastResults = [];
+  let lastSegmentResults = [];
+  let toastTimer;
+  const DEFAULT_PROJECT_NAME = "CR Beira Rio";
+  let planningPeriod = {projectName:DEFAULT_PROJECT_NAME, start:"", end:""};
+  const SIMULATOR_STORAGE_KEY = "beiraRioMaterialSimulatorV7";
+  const PERIOD_STORAGE_KEY = "beiraRioMaterialPlanningPeriodV1";
+  const SEGMENT_STORAGE_KEY = "beiraRioMaterialSegmentsV1";
+
+  const currency = new Intl.NumberFormat("pt-BR", {style:"currency", currency:"BRL"});
+  const number2 = new Intl.NumberFormat("pt-BR", {maximumFractionDigits:2});
+  const number4 = new Intl.NumberFormat("pt-BR", {maximumFractionDigits:4});
+  const integer = new Intl.NumberFormat("pt-BR", {maximumFractionDigits:0});
+  const monthFormat = new Intl.DateTimeFormat("pt-BR", {month:"short", year:"2-digit", timeZone:"UTC"});
+
+  function $(id) { return document.getElementById(id); }
+  function clone(value) { return JSON.parse(JSON.stringify(value)); }
+  function esc(value) { return String(value ?? "").replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[char]); }
+  function norm(value) { return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim(); }
+  function parseNum(value) { const n = Number(String(value ?? "").replace(/\s/g, "").replace(",", ".")); return Number.isFinite(n) ? n : 0; }
+  function formatQty(value, unit) { return `${number4.format(value)} ${unit}`; }
+  function monthLabel(yyyyMm) { return monthFormat.format(new Date(`${yyyyMm}-01T00:00:00Z`)).replace(" de ", "/"); }
+  function titleCaseMaterial(value) { return String(value).toLowerCase().replace(/(^|[\s/(-])\p{L}/gu, m => m.toUpperCase()).replace(/Mpa/gi,"MPa").replace(/Cbuq/gi,"CBUQ").replace(/Pead/gi,"PEAD"); }
+  function unique(values) { return [...new Set(values)].sort((a,b) => String(a).localeCompare(String(b), "pt-BR")); }
+  function uid(prefix="srv") { return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`; }
+  const SIDE_LABELS = {right:"Lado direito",left:"Lado esquerdo",median:"Canteiro central"};
+  function sideLabel(value) { return SIDE_LABELS[value] || "Não informado"; }
+
+  function showToast(message) {
+    clearTimeout(toastTimer);
+    els.toast.textContent = message;
+    els.toast.classList.add("show");
+    toastTimer = setTimeout(() => els.toast.classList.remove("show"), 2600);
+  }
+
+  function loadOptionalScript(src, onload) {
+    const script = document.createElement("script");
+    script.src = src; script.async = true; script.crossOrigin = "anonymous";
+    script.onload = () => onload?.();
+    script.onerror = () => script.remove();
+    document.head.appendChild(script);
+  }
+
+  function loadEnhancements() {
+    // PWA offline: o exportador XLSX interno (miniXlsx) é usado sem CDN.
+  }
+
+  function initTabs() {
+    document.querySelectorAll(".tab-button").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".tab-button").forEach(item => item.setAttribute("aria-selected", String(item === button)));
+        document.querySelectorAll(".page").forEach(page => page.classList.toggle("active", page.id === button.dataset.tab));
+        if (button.dataset.tab === "dashboard") setTimeout(renderDashboard, 20);
+      });
+    });
+  }
+
+  function fillSelect(select, items, allLabel, preferred) {
+    select.innerHTML = `<option value="all">${esc(allLabel)}</option>` + items.map(item => `<option value="${esc(item)}">${esc(item)}</option>`).join("");
+    if (preferred && items.includes(preferred)) select.value = preferred;
+  }
+
+  function initDashboard() {
+    const years = unique(HISTORY.series.map(row => row.month.slice(0,4)));
+    fillSelect(els.filterYear, years, "Todos os períodos", years.at(-1));
+    fillSelect(els.filterCategory, HISTORY.categories, "Todas as categorias");
+    fillSelect(els.filterSource, HISTORY.sources, "Todas as fontes");
+    fillSelect(els.filterUnit, HISTORY.units, "Todas as unidades", HISTORY.units.includes("m³") ? "m³" : HISTORY.units[0]);
+    fillSelect(els.filterMaterial, HISTORY.materials.map(titleCaseMaterial), "Todos os materiais");
+    [els.filterYear, els.filterCategory, els.filterSource, els.filterUnit, els.filterMaterial].forEach(control => control.addEventListener("change", renderDashboard));
+    els.clearFilters.addEventListener("click", () => {
+      els.filterYear.value = HISTORY.series.some(r => r.month.startsWith("2026")) ? "2026" : "all";
+      els.filterCategory.value = "all";
+      els.filterSource.value = "all";
+      els.filterUnit.value = HISTORY.units.includes("m³") ? "m³" : "all";
+      els.filterMaterial.value = "all";
+      renderDashboard();
+    });
+    els.headerRange.textContent = `${formatDate(HISTORY.dateMin)} a ${formatDate(HISTORY.dateMax)}`;
+    renderDashboard();
+  }
+
+  function formatDate(value) {
+    const [y,m,d] = value.split("-"); return `${d}/${m}/${y}`;
+  }
+
+  function dashboardRows() {
+    const year = els.filterYear.value;
+    const category = els.filterCategory.value;
+    const source = els.filterSource.value;
+    const unit = els.filterUnit.value;
+    const material = norm(els.filterMaterial.value);
+    return HISTORY.series.filter(row =>
+      (year === "all" || row.month.startsWith(year)) &&
+      (category === "all" || row.category === category) &&
+      (source === "all" || row.source === source) &&
+      (unit === "all" || row.unit === unit) &&
+      (material === "ALL" || norm(row.material) === material)
+    );
+  }
+
+  function aggregateMonthly(rows) {
+    const map = new Map();
+    rows.forEach(row => {
+      const item = map.get(row.month) || {month:row.month, quantity:0, value:0, records:0, pricedRecords:0};
+      item.quantity += row.quantity; item.value += row.value; item.records += row.records; item.pricedRecords += row.pricedRecords;
+      map.set(row.month, item);
+    });
+    return [...map.values()].sort((a,b) => a.month.localeCompare(b.month));
+  }
+
+  function movingAverage(values, windowSize=3) {
+    return values.map((_, index) => {
+      const slice = values.slice(Math.max(0, index-windowSize+1), index+1);
+      return slice.reduce((a,b)=>a+b,0) / slice.length;
+    });
+  }
+
+  function renderDashboard() {
+    const rows = dashboardRows();
+    const months = aggregateMonthly(rows);
+    const qty = rows.reduce((sum,row)=>sum+row.quantity,0);
+    const value = rows.reduce((sum,row)=>sum+row.value,0);
+    const records = rows.reduce((sum,row)=>sum+row.records,0);
+    const priced = rows.reduce((sum,row)=>sum+row.pricedRecords,0);
+    const unit = els.filterUnit.value === "all" ? "unidades mistas" : els.filterUnit.value;
+    const activeMonths = months.filter(month => month.quantity !== 0 || month.value !== 0).length;
+
+    els.kpiQuantity.textContent = els.filterUnit.value === "all" ? number2.format(qty) : formatQty(qty, unit);
+    els.kpiQuantityMeta.textContent = els.filterUnit.value === "all" ? "Soma indicativa de unidades mistas" : `Total em ${unit}`;
+    els.kpiValue.textContent = currency.format(value);
+    els.kpiValueMeta.textContent = `${integer.format(priced)} de ${integer.format(records)} registros precificados`;
+    els.kpiRecords.textContent = integer.format(records);
+    els.kpiRecordsMeta.textContent = `${rows.length} agrupamentos mensais`;
+    els.kpiAverage.textContent = activeMonths ? (els.filterUnit.value === "all" ? number2.format(qty/activeMonths) : formatQty(qty/activeMonths,unit)) : "—";
+    els.kpiAverageMeta.textContent = `${activeMonths} ${activeMonths === 1 ? "mês com movimento" : "meses com movimento"}`;
+    els.physicalUnitBadge.textContent = unit;
+    els.dashboardStatus.textContent = `${integer.format(records)} registros no recorte`;
+    renderCharts(months, unit);
+    renderRanking(rows, unit);
+    renderMonthlyTable(months, unit);
+  }
+
+  function renderCharts(months, unit) {
+    const labels = months.map(item => monthLabel(item.month));
+    const quantity = months.map(item => item.quantity);
+    const values = months.map(item => item.value);
+    renderOneChart("physical", els.physicalChart, labels, quantity, movingAverage(quantity), unit, false);
+    renderOneChart("financial", els.financialChart, labels, values, movingAverage(values), "R$", true);
+  }
+
+  function renderOneChart(key, canvas, labels, bars, line, unit, monetary) {
+    if (chartInstances[key]) { chartInstances[key].destroy(); delete chartInstances[key]; }
+    if (window.Chart) {
+      chartInstances[key] = new Chart(canvas, {
+        data: {labels, datasets:[
+          {type:"bar", label: monetary ? "Valor mensal" : "Quantidade mensal", data:bars, backgroundColor:"rgba(0,11,94,.82)", borderColor:"#000B5E", borderWidth:1, borderRadius:6, maxBarThickness:38},
+          {type:"line", label:"Média móvel (3 meses)", data:line, borderColor:"#F4B900", backgroundColor:"#F4B900", borderWidth:2.5, pointRadius:2.5, tension:.3}
+        ]},
+        options: {responsive:true, maintainAspectRatio:false, interaction:{mode:"index",intersect:false}, plugins:{legend:{position:"bottom",labels:{usePointStyle:true,boxWidth:8,padding:18}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${monetary?currency.format(ctx.parsed.y):number2.format(ctx.parsed.y)+" "+unit}`}}}, scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:9}},y:{beginAtZero:true,grid:{color:"rgba(21,32,31,.07)"},ticks:{callback:value=>monetary?compactMoney(value):compactNumber(value)}}}}
+      });
+    } else {
+      drawFallbackChart(canvas, labels, bars, line, monetary);
+    }
+  }
+
+  function compactNumber(value) { return new Intl.NumberFormat("pt-BR", {notation:"compact", maximumFractionDigits:1}).format(value); }
+  function compactMoney(value) { return `R$ ${compactNumber(value)}`; }
+
+  function drawFallbackChart(canvas, labels, bars, line, monetary) {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const width = Math.max(rect.width, 320), height = Math.max(rect.height, 240);
+    canvas.width = width*dpr; canvas.height = height*dpr;
+    const ctx = canvas.getContext("2d"); ctx.scale(dpr,dpr); ctx.clearRect(0,0,width,height);
+    const pad = {l:58,r:16,t:16,b:44}; const w=width-pad.l-pad.r, h=height-pad.t-pad.b;
+    const max = Math.max(...bars,...line,1)*1.12;
+    ctx.font="12px system-ui"; ctx.fillStyle="#5f687c"; ctx.textAlign="right";
+    for(let i=0;i<=4;i++) { const y=pad.t+h-(h*i/4); ctx.strokeStyle="rgba(0,11,94,.09)"; ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(width-pad.r,y); ctx.stroke(); ctx.fillText(monetary?compactMoney(max*i/4):compactNumber(max*i/4), pad.l-8,y+4); }
+    const step = w/Math.max(labels.length,1); const bw = Math.min(34,step*.58);
+    bars.forEach((value,i)=>{ const bh=h*(value/max); const x=pad.l+step*i+(step-bw)/2; const y=pad.t+h-bh; ctx.fillStyle="rgba(0,11,94,.82)"; roundRect(ctx,x,y,bw,bh,5); ctx.fill(); });
+    ctx.strokeStyle="#F4B900"; ctx.lineWidth=2.5; ctx.beginPath();
+    line.forEach((value,i)=>{ const x=pad.l+step*i+step/2, y=pad.t+h-h*(value/max); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.stroke();
+    const tickEvery=Math.max(1,Math.ceil(labels.length/8)); ctx.textAlign="center"; ctx.fillStyle="#5f687c";
+    labels.forEach((label,i)=>{ if(i%tickEvery===0 || i===labels.length-1) ctx.fillText(label,pad.l+step*i+step/2,height-17); });
+    if(!labels.length){ctx.textAlign="center";ctx.fillStyle="#5f687c";ctx.font="14px system-ui";ctx.fillText("Sem dados para o filtro selecionado",width/2,height/2);}
+  }
+
+  function roundRect(ctx,x,y,w,h,r){ if(h<=0)return; const rr=Math.min(r,w/2,h/2); ctx.beginPath();ctx.moveTo(x+rr,y);ctx.arcTo(x+w,y,x+w,y+h,rr);ctx.arcTo(x+w,y+h,x,y+h,rr);ctx.arcTo(x,y+h,x,y,rr);ctx.arcTo(x,y,x+w,y,rr);ctx.closePath(); }
+
+  function renderRanking(rows, unit) {
+    const totals = new Map();
+    rows.forEach(row => totals.set(row.material,(totals.get(row.material)||0)+row.quantity));
+    const ranking=[...totals].sort((a,b)=>b[1]-a[1]).slice(0,8); const max=ranking[0]?.[1]||1;
+    els.materialRanking.innerHTML = ranking.length ? ranking.map(([name,value])=>`<div class="rank-row"><div class="rank-name" title="${esc(titleCaseMaterial(name))}">${esc(titleCaseMaterial(name))}</div><div class="rank-track"><div class="rank-bar" style="width:${Math.max(2,value/max*100)}%"></div></div><div class="rank-value">${esc(number2.format(value))} ${esc(unit)}</div></div>`).join("") : `<div class="empty-state"><strong>Sem materiais no recorte</strong>Altere os filtros para visualizar o ranking.</div>`;
+  }
+
+  function renderMonthlyTable(months, unit) {
+    els.monthCount.textContent = `${months.length} ${months.length===1?"mês":"meses"}`;
+    els.monthlyTable.innerHTML = months.length ? [...months].reverse().map(item=>`<tr><td>${esc(monthLabel(item.month))}</td><td class="num">${esc(number2.format(item.quantity))} ${esc(unit)}</td><td class="num">${esc(currency.format(item.value))}</td><td class="num">${esc(integer.format(item.records))}</td></tr>`).join("") : `<tr><td colspan="4" class="muted">Sem dados para os filtros selecionados.</td></tr>`;
+  }
+
+  function historicalPrice(material, unit) {
+    const match = HISTORY.priceCatalog.find(item => norm(item.material) === norm(material) && item.unit === unit);
+    return match ? match.avgPrice : 0;
+  }
+
+  function hydrateServicePrices(list) {
+    list.forEach(service => (service.materials||[]).forEach(item => { if(item.price == null) item.price = historicalPrice(item.name,item.unit); }));
+    return list;
+  }
+
+  // Garante que novos serviços padrão apareçam mesmo para usuários que já possuem
+  // composições salvas no localStorage de versões anteriores.
+  function ensureCurrentDefaultServices(list) {
+    const current=Array.isArray(list)?list:[];
+    const ids=new Set(current.map(service=>service.id));
+    ["desmatamento","regularizacao-subleito"].forEach(id=>{
+      if(ids.has(id)) return;
+      const base=DEFAULT_SERVICES.find(service=>service.id===id);
+      if(base) current.push(hydrateServicePrices([clone(base)])[0]);
+    });
+    return current;
+  }
+
+  function loadServices() {
+    try {
+      const current = JSON.parse(localStorage.getItem(SIMULATOR_STORAGE_KEY));
+      if (current && Array.isArray(current.services) && current.services.length) services = current.services;
+      else {
+        const version6 = JSON.parse(localStorage.getItem("beiraRioMaterialSimulatorV6"));
+        if(version6 && Array.isArray(version6.services) && version6.services.length) services=migrateV7Services(version6.services);
+        else {
+          const version5 = JSON.parse(localStorage.getItem("beiraRioMaterialSimulatorV5"));
+          if(version5 && Array.isArray(version5.services) && version5.services.length) services=migrateV7Services(migrateV6Services(version5.services));
+          else {
+            const version4 = JSON.parse(localStorage.getItem("beiraRioMaterialSimulatorV4"));
+            if(version4 && Array.isArray(version4.services) && version4.services.length) services=migrateV7Services(migrateV6Services(migrateV5Services(version4.services)));
+            else {
+              const previous = JSON.parse(localStorage.getItem("beiraRioMaterialSimulatorV3"));
+              if(previous && Array.isArray(previous.services) && previous.services.length) services=migrateV7Services(migrateV6Services(migrateV5Services(migrateRateBasedBedding(previous.services,true))));
+              else {
+                const version2 = JSON.parse(localStorage.getItem("beiraRioMaterialSimulatorV2"));
+                if(version2 && Array.isArray(version2.services) && version2.services.length) services=migrateV7Services(migrateV6Services(migrateV5Services(migrateRateBasedBedding(version2.services,false))));
+                else {
+                  const legacy = JSON.parse(localStorage.getItem("beiraRioMaterialSimulatorV1"));
+                  services = Array.isArray(legacy) && legacy.length ? migrateV7Services(migrateV6Services(migrateV5Services(migrateRateBasedBedding(migrateLegacyServices(legacy),false)))) : hydrateServicePrices(clone(DEFAULT_SERVICES));
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch { services = hydrateServicePrices(clone(DEFAULT_SERVICES)); }
+    services=ensureCurrentDefaultServices(services);
+    services.forEach(service=>{ if(service.engine==="pipe") syncPipeIdentity(service,false); });
+    services.forEach(service=>{ if(service.engine==="culvert") syncCulvertIdentity(service,false); });
+    services.forEach(service=>{ if(service.engine==="wall") syncWallIdentity(service,false); });
+    // ComposerM: classificação técnica dos serviços
+    services.forEach(service=>{
+      if(service.id==="meio-fio" || norm(service.name).includes("MEIO FIO")) service.category="Drenagem";
+      if(service.id==="calcada" || norm(service.name).includes("CALCADA")) service.category="Pavimentação";
+    });
+    const validServiceIds=new Set(services.map(service=>service.id));
+    const validSegments=segments.filter(segment=>validServiceIds.has(segment.serviceId));
+    if(validSegments.length!==segments.length){segments=validSegments;saveSegments();}
+    if(!segments.length) {
+      const legacyTargets=services.filter(service=>parseNum(service.target)>0);
+      if(legacyTargets.length) {
+        segments=legacyTargets.map(service=>({id:uid("trecho"),serviceId:service.id,serviceName:service.name,stakeStart:"A definir",stakeEnd:"A definir",side:"",quantity:parseNum(service.target),unit:service.targetUnit,note:"Meta migrada da versão anterior",updatedAt:new Date().toISOString()}));
+        services.forEach(service=>{service.target=0;}); saveSegments();
+      }
+    }
+    saveServices();
+    renderSimulator();
+  }
+
+  function saveServices() {
+    localStorage.setItem(SIMULATOR_STORAGE_KEY, JSON.stringify({version:7,services}));
+  }
+
+  function migrateLegacyServices(list) {
+    const migrated = clone(list).filter(service=>service.id!=="tubulacao-600");
+    PIPE_DEFAULTS.forEach(([diameter,classCode])=>migrated.push(makePipeService(diameter,classCode,"PB")));
+    return migrated;
+  }
+
+  function migrateProjectServices(list) {
+    const allowed=new Set(PIPE_DIAMETERS);
+    const migrated=clone(list).filter(service=>service.id!=="dreno-profundo"&&norm(service.name)!=="DRENO PROFUNDO"&&(service.engine!=="pipe"||allowed.has(Number(service.params?.diameter))));
+    migrated.filter(service=>service.engine==="pipe").forEach(service=>{
+      service.params=service.params||{}; service.params.counterBeddingRate=Math.max(0,parseNum(service.params.counterBeddingRate));
+      if(!service.materials.some(item=>item.basis==="counterBedding")) service.materials.push({name:"Concreto para contraberço",coefficient:1,basis:"counterBedding",unit:"m³",price:0});
+    });
+    PIPE_DEFAULTS.forEach(([diameter,classCode])=>{if(!migrated.some(service=>service.engine==="pipe"&&Number(service.params?.diameter)===diameter))migrated.push(makePipeService(diameter,classCode,"PB"));});
+    CULVERT_DEFAULTS.forEach(([width,height])=>{if(!migrated.some(service=>service.engine==="culvert"&&Number(service.params?.width)===width&&Number(service.params?.height)===height))migrated.push(makeCulvertService(width,height));});
+    return migrated;
+  }
+
+  function migrateRateBasedBedding(list,invertCounterRate=false) {
+    const migrated=migrateProjectServices(list);
+    migrated.filter(service=>["pipe","culvert"].includes(service.engine)).forEach(service=>{
+      const p=service.params||(service.params={});
+      const oldCounterRate=Math.max(0,parseNum(p.counterBeddingRate));
+      p.counterBeddingRate=invertCounterRate&&oldCounterRate>0?1/oldCounterRate:oldCounterRate;
+      if(p.beddingRate==null) {
+        const width=Math.max(0,parseNum(p.beddingWidth));
+        const thickness=Math.max(0,parseNum(p.beddingThickness));
+        const pieceLength=Math.max(.01,parseNum(p.pipeLength||p.pieceLength)||1);
+        const lossFactor=1+Math.max(0,parseNum(p.lossPercent))/100;
+        p.beddingRate=service.engine==="pipe"&&width&&thickness?(width*thickness*pieceLength)/lossFactor:0;
+      } else p.beddingRate=Math.max(0,parseNum(p.beddingRate));
+      service.materials=Array.isArray(service.materials)?service.materials:[];
+      let bedding=service.materials.find(item=>item.basis==="bedding");
+      if(!bedding) {
+        bedding={name:"Concreto para berço",coefficient:1,basis:"bedding",unit:"m³",price:0};
+        service.materials.push(bedding);
+      } else if(norm(bedding.name).includes("AREIA")&&norm(bedding.name).includes("BERCO")) {
+        bedding.name="Concreto para berço";
+        bedding.unit="m³";
+        bedding.price=0;
+      }
+      if(!service.materials.some(item=>item.basis==="counterBedding")) service.materials.push({name:"Concreto para contraberço",coefficient:1,basis:"counterBedding",unit:"m³",price:0});
+    });
+    return migrated;
+  }
+
+  function migrateV5Services(list) {
+    const previous=migrateProjectServices(list);
+    const replacedIds=new Set(["boca-lobo","poco-visita","boca-bueiro-dnit","imprimacao","pintura-ligacao","muro-alvenaria","calcada","meio-fio","sarjeta"]);
+    const migrated=previous.filter(service=>!replacedIds.has(service.id));
+    migrated.filter(service=>service.engine==="pipe").forEach(service=>{
+      service.params=service.params||{};
+      service.materials=Array.isArray(service.materials)?service.materials:[];
+      const bedding=service.materials.find(item=>item.basis==="bedding");
+      const counter=service.materials.find(item=>item.basis==="counterBedding");
+      if(bedding) bedding.name="Concreto 20 MPa para berço";
+      if(counter) counter.name="Concreto 20 MPa para contraberço";
+    });
+    migrated.filter(service=>service.engine==="culvert").forEach(service=>{
+      const p=service.params||(service.params={});
+      p.wallThickness=Math.max(0,parseNum(p.wallThickness)||.15);
+      p.bidimBandWidth=Math.max(0,parseNum(p.bidimBandWidth)||.20);
+      p.bidimExtra=Math.max(0,parseNum(p.bidimExtra)||.50);
+      delete p.counterBeddingRate;
+      service.materials=(Array.isArray(service.materials)?service.materials:[]).filter(item=>item.basis!=="counterBedding");
+      const bedding=service.materials.find(item=>item.basis==="bedding");
+      if(bedding) bedding.name="Concreto 20 MPa para berço";
+      else service.materials.push({name:"Concreto 20 MPa para berço",coefficient:1,basis:"bedding",unit:"m³",price:0});
+      if(!service.materials.some(item=>item.basis==="bidim")) service.materials.push({name:"Geotêxtil Bidim para juntas de aduela",coefficient:1,basis:"bidim",unit:"m²",price:0});
+    });
+    return hydrateServicePrices([makeCatchBasinService(),makeManholeService(),...migrated,makeCulvertMouthService(),makeSurfaceTreatmentService("imprimacao","Imprimação",.0012),makeSurfaceTreatmentService("pintura-ligacao","Pintura de ligação",.0005),makeWallService(),makeLinearConcreteService("calcada","Calçada de concreto","sidewalk",1.50,.08,"Pavimentação"),makeCurbService(),makeLinearConcreteService("sarjeta","Sarjeta de concreto","gutter",.30,.10,"Drenagem")]);
+  }
+
+  function copyMaterialPrices(target,source) {
+    if(!source) return target;
+    target.materials.forEach(item=>{
+      const match=(source.materials||[]).find(old=>norm(old.name)===norm(item.name)&&old.unit===item.unit);
+      if(match&&match.price!=null) item.price=parseNum(match.price);
+    });
+    target.enabled=source.enabled!==false;
+    target.target=Math.max(0,parseNum(source.target));
+    return target;
+  }
+
+  function mergeParams(target,source,keys) {
+    if(!source?.params) return target;
+    keys.forEach(key=>{if(source.params[key]!=null) target.params[key]=source.params[key];});
+    return target;
+  }
+
+  function migrateV6Services(list) {
+    const previous=clone(list);
+    const coatingIds=["tss","tsd","tst","lama-asfaltica","microrrevestimento","capa-selante"];
+    const replacedIds=new Set(["boca-lobo","clp","imprimacao","pintura-ligacao","muro-alvenaria",...coatingIds]);
+    const migrated=previous.filter(service=>!replacedIds.has(service.id));
+    const source=id=>previous.find(service=>service.id===id);
+
+    const catchBasin=copyMaterialPrices(mergeParams(makeCatchBasinService(),source("boca-lobo"),["width","length","depth","blockRate","concretePerBlock","pillarsPerUnit","guidesPerUnit","bottomThickness","beltWidth","beltHeight"]),source("boca-lobo"));
+    catchBasin.params.beltWidth=Math.max(0,parseNum(catchBasin.params.beltWidth)||.20);
+    catchBasin.params.beltHeight=Math.max(0,parseNum(catchBasin.params.beltHeight)||.20);
+    const clp=copyMaterialPrices(mergeParams(makeClpService(),source("clp"),["width","length","depth","blockRate","concretePerBlock","pillarsPerUnit","bottomThickness","beltWidth","beltHeight"]),source("clp"));
+
+    const wall=copyMaterialPrices(mergeParams(makeWallService(),source("muro-alvenaria"),["masonryType","height","blockRate","pillarWidth","pillarThickness","beltWidth","beltHeight"]),source("muro-alvenaria"));
+    syncWallIdentity(wall,false);
+
+    const surface=(id,name,rate)=>{
+      const old=source(id),updated=copyMaterialPrices(makeSurfaceTreatmentService(id,name,old?.params?.applicationRate??rate),old);
+      updated.params.width=Math.max(0,parseNum(old?.params?.width)||7);
+      updated.targetUnit=["m","km","m²"].includes(old?.targetUnit)?old.targetUnit:"m";
+      return updated;
+    };
+    const coatings=[
+      ["tss","Tratamento superficial simples (TSS)","DNIT 146/2012-ES"],
+      ["tsd","Tratamento superficial duplo (TSD)","DNIT 147/2012-ES"],
+      ["tst","Tratamento superficial triplo (TST)","DNIT 148/2012-ES"],
+      ["lama-asfaltica","Lama asfáltica","DNIT 150/2010-ES"],
+      ["microrrevestimento","Microrrevestimento asfáltico a frio","DNIT 035/2026-ES"],
+      ["capa-selante","Capa selante","DNIT 464/2026-ES"]
+    ].map(([id,name,reference])=>{
+      const old=source(id),updated=copyMaterialPrices(mergeParams(makeAsphaltCoatingService(id,name,reference),old,["width","binderRate","aggregateRate"]),old);
+      updated.targetUnit=["m","km","m²"].includes(old?.targetUnit)?old.targetUnit:"m";
+      return updated;
+    });
+
+    return hydrateServicePrices([catchBasin,clp,...migrated,surface("imprimacao","Imprimação",.0012),surface("pintura-ligacao","Pintura de ligação",.0005),...coatings,wall]);
+  }
+
+  function migrateV7Services(list) {
+    const migrated=clone(list),wall=migrated.find(service=>service.id==="muro-alvenaria"||service.engine==="wall");
+    if(!wall) migrated.push(makeWallService());
+    else {
+      const p=wall.params||(wall.params={});
+      if(p.foundationWidth==null) p.foundationWidth=.30;
+      if(p.foundationHeight==null) p.foundationHeight=.30;
+      wall.materials=Array.isArray(wall.materials)?wall.materials:[];
+      if(!wall.materials.some(item=>item.basis==="foundation")) wall.materials.push({name:"Concreto ciclópico para baldrame",coefficient:1,basis:"foundation",unit:"m³",price:0});
+    }
+    return hydrateServicePrices(migrated);
+  }
+
+  function syncPipeIdentity(service, renameService=true) {
+    const p = service.params || (service.params={});
+    p.diameter = PIPE_DIAMETERS.includes(Number(p.diameter)) ? Number(p.diameter) : 600;
+    p.classCode = PIPE_CLASSES.includes(p.classCode) ? p.classCode : "PA2";
+    p.joint = "PB";
+    const n=pipePbNorm(p.diameter);
+    p.pipeLength = Math.max(.01,parseNum(p.pipeLength)||n.usefulLengthMm/1000);
+    p.lossPercent = Math.max(0,parseNum(p.lossPercent));
+    if(p.beddingWidth==null) p.beddingWidth=0;
+    if(p.beddingHeight==null) p.beddingHeight=0;
+    if(p.counterBeddingWidth==null) p.counterBeddingWidth=0;
+    if(p.counterBeddingHeight==null) p.counterBeddingHeight=0;
+    p.beddingWidth=Math.max(0,parseNum(p.beddingWidth));
+    p.beddingHeight=Math.max(0,parseNum(p.beddingHeight));
+    p.counterBeddingWidth=Math.max(0,parseNum(p.counterBeddingWidth));
+    p.counterBeddingHeight=Math.max(0,parseNum(p.counterBeddingHeight));
+    p.wallThickness=Math.max(.001,parseNum(p.wallThickness)||n.wallMinMm/1000);
+    p.bellLength=Math.max(0,parseNum(p.bellLength)||n.bellLengthMm/1000);
+    p.clearance=Math.max(0,parseNum(p.clearance)||n.clearanceMm/1000);
+    p.bellOuterDiameter=Math.max(0,parseNum(p.bellOuterDiameter));
+    p.transitionLength=Math.max(0,parseNum(p.transitionLength)||p.bellLength);
+    // Mantém compatibilidade com versões antigas. As taxas deixam de dirigir o cálculo quando a geometria está preenchida.
+    p.beddingRate=Math.max(0,parseNum(p.beddingRate));
+    p.counterBeddingRate=Math.max(0,parseNum(p.counterBeddingRate));
+    if(renameService) service.name = `Tubulação de concreto Ø ${p.diameter} mm — ${pipeClassLabel(p.classCode)} PB`;
+    const pipeItem = service.materials?.find(item=>item.basis==="pieces");
+    if(pipeItem) pipeItem.name = `Tubo de concreto ${p.diameter}mm PB ${pipeClassLabel(p.classCode)}`;
+    service.targetUnit = ["m","km"].includes(service.targetUnit) ? service.targetUnit : "m";
+  }
+
+  function clamp(v,min,max){ return Math.max(min,Math.min(max,v)); }
+
+  // Área de interseção entre um círculo e um retângulo horizontal centrado no eixo do tubo.
+  // centerY é medido a partir do topo do berço; corpo do tubo tem centerY=Rcorpo.
+  function circleRectIntersection(radius,centerY,width,y0,y1) {
+    radius=Math.max(0,Number(radius)||0); width=Math.max(0,Number(width)||0);
+    if(!radius||!width||y1<=y0) return 0;
+    const half=Math.min(width/2,radius);
+    const n=600; // Simpson: alta precisão e custo desprezível para esta aplicação.
+    const dx=(2*half)/n;
+    const f=x=>{
+      const root=Math.sqrt(Math.max(0,radius*radius-x*x));
+      const cy0=centerY-root, cy1=centerY+root;
+      return Math.max(0,Math.min(y1,cy1)-Math.max(y0,cy0));
+    };
+    let sum=f(-half)+f(half);
+    for(let i=1;i<n;i++) sum+=(i%2?4:2)*f(-half+i*dx);
+    return sum*dx/3;
+  }
+
+  function pipeGeometryFor(service) {
+    const p=service.params||{}, n=pipePbNorm(p.diameter);
+    const useful=Math.max(.01,parseNum(p.pipeLength)||n.usefulLengthMm/1000);
+    const wall=Math.max(.001,parseNum(p.wallThickness)||n.wallMinMm/1000);
+    const di=Math.max(.001,Number(p.diameter)/1000);
+    const bodyOuter=di+2*wall, bodyR=bodyOuter/2;
+    const clearance=Math.max(0,parseNum(p.clearance)||n.clearanceMm/1000);
+    const bellLength=Math.min(useful,Math.max(0,parseNum(p.bellLength)||n.bellLengthMm/1000));
+    // NBR fornece folga C, mas não o Ø externo da bolsa. Valor automático assume mesma espessura da parede na bolsa;
+    // o usuário pode sobrescrever bellOuterDiameter em Dados avançados para usar catálogo/projeto do fabricante.
+    const bellInner=bodyOuter+clearance;
+    const bellOuterAuto=bellInner+2*wall;
+    const bellOuter=Math.max(bodyOuter,parseNum(p.bellOuterDiameter)||bellOuterAuto);
+    const bellR=bellOuter/2;
+    const trans=Math.min(bellLength,Math.max(0,parseNum(p.transitionLength)||bellLength));
+    const lb=Math.max(0,parseNum(p.beddingWidth)), hb=Math.max(0,parseNum(p.beddingHeight));
+    const lcb=Math.max(0,parseNum(p.counterBeddingWidth)), hcb=Math.max(0,parseNum(p.counterBeddingHeight));
+    const centerY=bodyR; // eixo longitudinal comum; bolsa maior pode penetrar no berço.
+    const concreteAreas=r=>{
+      const bedGross=lb*hb, cbGross=lcb*hcb;
+      const bedOcc=circleRectIntersection(r,centerY,lb,-hb,0);
+      const cbOcc=circleRectIntersection(r,centerY,lcb,0,hcb);
+      return {bed:Math.max(0,bedGross-bedOcc),counter:Math.max(0,cbGross-cbOcc),bedOcc,cbOcc};
+    };
+    const bodyLen=Math.max(0,useful-bellLength);
+    const aBody=concreteAreas(bodyR);
+    let bedding=aBody.bed*bodyLen, counter=aBody.counter*bodyLen;
+    // Região PB: integração longitudinal. A transição varia linearmente do corpo à bolsa; eventual trecho restante usa Ø bolsa.
+    if(bellLength>0){
+      if(trans>0){
+        const nz=240, dz=trans/nz;
+        const evalAt=z=>{ const r=bodyR+(bellR-bodyR)*(z/trans); return concreteAreas(r); };
+        let sb=evalAt(0).bed+evalAt(trans).bed, sc=evalAt(0).counter+evalAt(trans).counter;
+        for(let i=1;i<nz;i++){const a=evalAt(i*dz),coef=i%2?4:2;sb+=coef*a.bed;sc+=coef*a.counter;}
+        bedding+=sb*dz/3; counter+=sc*dz/3;
+      }
+      const bellStraight=Math.max(0,bellLength-trans);
+      if(bellStraight){ const aBell=concreteAreas(bellR); bedding+=aBell.bed*bellStraight; counter+=aBell.counter*bellStraight; }
+    }
+    return {useful,di,wall,bodyOuter,bellInner,bellOuter,bellLength,clearance,transitionLength:trans,
+      beddingPerPiece:bedding,counterPerPiece:counter,totalConcretePerPiece:bedding+counter,
+      beddingWidth:lb,beddingHeight:hb,counterWidth:lcb,counterHeight:hcb,
+      usingBellOverride:parseNum(p.bellOuterDiameter)>0,norm:n};
+  }
+
+  function pipeGeometrySummary(service){
+    const g=pipeGeometryFor(service),p=service.params;
+    const ready=g.beddingWidth>0&&g.beddingHeight>0&&g.counterWidth>0&&g.counterHeight>0;
+    return `<div class="pipe-geometry-box"><div class="pipe-geometry-head"><div><strong>Geometria automática PB</strong><div class="muted" style="font-size:.72rem;margin-top:2px">ABNT NBR 8890:2007 · Tabela A.1 + dimensões de execução</div></div><span class="pill">DN ${esc(p.diameter)}</span></div>
+      <div class="pipe-geometry-grid">
+        <div class="pipe-geometry-stat"><span>Ø externo corpo</span><strong>${number4.format(g.bodyOuter)} m</strong></div>
+        <div class="pipe-geometry-stat"><span>Compr. bolsa B</span><strong>${number4.format(g.bellLength)} m</strong></div>
+        <div class="pipe-geometry-stat"><span>Ø externo bolsa</span><strong>${number4.format(g.bellOuter)} m</strong></div>
+        <div class="pipe-geometry-stat"><span>Folga C</span><strong>${number4.format(g.clearance)} m</strong></div>
+        <div class="pipe-geometry-stat"><span>Berço / peça</span><strong>${ready?number4.format(g.beddingPerPiece):"—"} m³</strong></div>
+        <div class="pipe-geometry-stat"><span>Contraberço / peça</span><strong>${ready?number4.format(g.counterPerPiece):"—"} m³</strong></div>
+        <div class="pipe-geometry-stat"><span>Concreto / peça</span><strong>${ready?number4.format(g.totalConcretePerPiece):"—"} m³</strong></div>
+        <div class="pipe-geometry-stat"><span>Comprimento útil</span><strong>${number4.format(g.useful)} m</strong></div>
+      </div>
+      <div class="pipe-geometry-note">O motor desconta geometricamente a seção externa do tubo das áreas de berço/contraberço. Na região da bolsa, o raio varia ao longo do comprimento B e a integração considera a invasão da bolsa no berço quando houver.</div>
+      ${!g.usingBellOverride?`<div class="pipe-geometry-warning"><strong>Precisão da bolsa:</strong> a NBR fornece B, C e a espessura mínima D, mas não fornece o diâmetro externo final da bolsa. Enquanto o Ø externo da bolsa não for informado por projeto/fabricante, o ComposerM calcula-o por Øint bolsa = Øext ponta + C e aplica a mesma espessura adotada da parede. Para fechamento contratual 100% dimensional, preencha o Ø externo real em “Dados avançados PB”.</div>`:""}
+    </div>`;
+  }
+
+  function syncCulvertIdentity(service,renameService=true) {
+    const p=service.params||(service.params={});
+    p.width=Math.max(.01,parseNum(p.width)||1.50); p.height=Math.max(.01,parseNum(p.height)||.60);
+    p.pieceLength=Math.max(.01,parseNum(p.pieceLength)||1); p.lossPercent=Math.max(0,parseNum(p.lossPercent)); p.beddingRate=Math.max(0,parseNum(p.beddingRate)); p.wallThickness=Math.max(0,parseNum(p.wallThickness)||.15); p.bidimBandWidth=Math.max(0,parseNum(p.bidimBandWidth)||.20); p.bidimExtra=Math.max(0,parseNum(p.bidimExtra)||.50);
+    if(renameService)service.name=`Aduela pré-moldada ${dimensionLabel(p.width)} × ${dimensionLabel(p.height)} m`;
+    const item=service.materials?.find(material=>material.basis==="pieces"); if(item)item.name=`Aduela ${dimensionLabel(p.width)} × ${dimensionLabel(p.height)} m`;
+    service.targetUnit=["m","km","un"].includes(service.targetUnit)?service.targetUnit:"m";
+  }
+
+  function syncWallIdentity(service,resetRate=false) {
+    const p=service.params||(service.params={});
+    p.masonryType=WALL_MASONRY_TYPES[p.masonryType]?p.masonryType:"ceramic";
+    const type=WALL_MASONRY_TYPES[p.masonryType];
+    if(resetRate) p.blockRate=type.defaultRate;
+    p.blockRate=Math.max(0,parseNum(p.blockRate)||type.defaultRate);
+    if(p.foundationWidth==null) p.foundationWidth=.30;
+    if(p.foundationHeight==null) p.foundationHeight=.30;
+    service.name="Muro de alvenaria";
+    const block=service.materials?.find(item=>item.basis==="blocks");
+    if(block) block.name=type.material;
+    service.targetUnit="m";
+  }
+
+  function renderSimulator() {
+    // Preserva cartões e grupos abertos para que editar um campo não feche a interface.
+    els.compositionList.querySelectorAll("details.service-card[open]").forEach(card=>openServiceIds.add(card.dataset.service));
+    els.compositionList.querySelectorAll("details.composition-category[open]").forEach(group=>openCompositionCategories.add(group.dataset.category));
+    els.serviceCount.textContent = `${services.length} ${services.length===1?"serviço":"serviços"}`;
+    const firstRender=!els.compositionList.dataset.initialized;
+    const defaultOrder=new Map(DEFAULT_SERVICES.map((service,index)=>[service.id,index]));
+    const categories=serviceCategories();
+    let globalIndex=0;
+    els.compositionList.innerHTML=categories.map(category=>{
+      const categoryServices=services
+        .filter(service=>(service.category||"Outros")===category)
+        .sort((a,b)=>{
+          const ia=defaultOrder.has(a.id)?defaultOrder.get(a.id):99999;
+          const ib=defaultOrder.has(b.id)?defaultOrder.get(b.id):99999;
+          return ia!==ib?ia-ib:a.name.localeCompare(b.name,"pt-BR");
+        });
+      const categoryKey=norm(category);
+      const groupOpen=openCompositionCategories.has(categoryKey);
+      const cards=categoryServices.map(service=>serviceCard(service,globalIndex++,firstRender)).join("");
+      return `<details class="composition-category" data-category="${esc(categoryKey)}" ${groupOpen?"open":""}>
+        <summary><span class="composition-category-name">${esc(category)}</span><span class="composition-category-count">${categoryServices.length} ${categoryServices.length===1?"item":"itens"}</span></summary>
+        <div class="composition-category-body">${cards}</div>
+      </details>`;
+    }).join("");
+    els.compositionList.dataset.initialized="1";
+    els.compositionList.querySelectorAll("details.composition-category").forEach(group=>{
+      if(group.open) openCompositionCategories.add(group.dataset.category);
+      group.addEventListener("toggle",()=>{
+        if(group.open) openCompositionCategories.add(group.dataset.category);
+        else openCompositionCategories.delete(group.dataset.category);
+      });
+    });
+    els.compositionList.querySelectorAll("details.service-card").forEach(card=>{
+      if(card.open) openServiceIds.add(card.dataset.service);
+      card.addEventListener("toggle",()=>{
+        if(card.open) openServiceIds.add(card.dataset.service);
+        else openServiceIds.delete(card.dataset.service);
+      });
+    });
+    renderSegmentPlanner();
+    bindSimulatorInputs();
+  }
+
+  function loadSegments() {
+    try {
+      const saved=JSON.parse(localStorage.getItem(SEGMENT_STORAGE_KEY));
+      segments=Array.isArray(saved)?saved:[];
+    } catch { segments=[]; }
+  }
+
+  function saveSegments() {
+    localStorage.setItem(SEGMENT_STORAGE_KEY,JSON.stringify(segments));
+  }
+
+  function serviceCategories() {
+    const preferred=["Drenagem","Terraplenagem","Pavimentação","Obras Complementares","Outros"];
+    const found=[...new Set(services.map(service=>service.category||"Outros"))];
+    return found.sort((a,b)=>{
+      const ia=preferred.indexOf(a),ib=preferred.indexOf(b);
+      if(ia>=0||ib>=0){
+        if(ia<0)return 1;if(ib<0)return -1;return ia-ib;
+      }
+      return a.localeCompare(b,"pt-BR");
+    });
+  }
+
+  function updateSegmentServiceOptions(preferredServiceId) {
+    const category=els.segmentCategory.value;
+    const filtered=services.filter(service=>(service.category||"Outros")===category);
+    const selected=preferredServiceId||els.segmentService.value;
+    els.segmentService.innerHTML=filtered.length
+      ?filtered.map(service=>`<option value="${esc(service.id)}">${esc(service.name)}</option>`).join("")
+      :`<option value="">Nenhum item nesta categoria</option>`;
+    if(filtered.some(service=>service.id===selected)) els.segmentService.value=selected;
+    updateSegmentUnitOptions();
+  }
+
+  function renderSegmentPlanner() {
+    const previousServiceId=els.segmentService.value;
+    const previousService=findService(previousServiceId);
+    const categories=serviceCategories();
+    const previousCategory=els.segmentCategory.value;
+    const desiredCategory=previousService?.category || (categories.includes(previousCategory)?previousCategory:categories[0]);
+    els.segmentCategory.innerHTML=categories.length
+      ?categories.map(category=>`<option value="${esc(category)}">${esc(category)}</option>`).join("")
+      :`<option value="">Cadastre uma composição</option>`;
+    if(desiredCategory) els.segmentCategory.value=desiredCategory;
+    updateSegmentServiceOptions(previousServiceId);
+    els.segmentCount.textContent=`${segments.length} ${segments.length===1?"trecho":"trechos"}`;
+    if(!segments.length){
+      els.segmentList.innerHTML=`<div class="segment-empty"><strong>Nenhum trecho cadastrado.</strong><br>Adicione um serviço com estaca inicial e final.</div>`;
+      return;
+    }
+    els.segmentList.innerHTML=segments.map(segment=>{
+      const service=findService(segment.serviceId);
+      const name=service?.name||segment.serviceName||"Serviço removido";
+      const category=service?.category||"Sem categoria";
+      return `<article class="segment-card">
+        <div class="segment-card-head"><div><strong>${esc(name)}</strong><small>${esc(category)} · ${esc(sideLabel(segment.side))}${segment.note?` · ${esc(segment.note)}`:""}</small></div><div class="segment-card-actions"><button type="button" class="icon-btn edit-segment" data-id="${esc(segment.id)}" title="Editar trecho" aria-label="Editar trecho">✎</button><button type="button" class="icon-btn remove-segment" data-id="${esc(segment.id)}" title="Excluir trecho" aria-label="Excluir trecho">×</button></div></div>
+        <div class="segment-route">Est. ${esc(segment.stakeStart)} → ${esc(segment.stakeEnd)}</div>
+        <div class="segment-qty">Meta: <strong>${esc(number4.format(segment.quantity))} ${esc(segment.unit)}</strong></div>
+      </article>`;
+    }).join("");
+  }
+
+  function updateSegmentUnitOptions(preferred) {
+    const service=findService(els.segmentService.value);
+    const options=service?targetUnits(service):[];
+    const selected=preferred||els.segmentUnit.value||service?.targetUnit;
+    els.segmentUnit.innerHTML=options.map(([value,label])=>`<option value="${esc(value)}" ${value===selected?"selected":""}>${esc(label)}</option>`).join("");
+  }
+
+  function resetSegmentForm() {
+    els.segmentId.value="";
+    els.segmentStakeStart.value="";
+    els.segmentStakeEnd.value="";
+    els.segmentSide.value="";
+    els.segmentQuantity.value="";
+    els.segmentNote.value="";
+    els.saveSegment.textContent="+ Adicionar trecho";
+    els.cancelSegmentEdit.classList.add("hidden");
+    updateSegmentUnitOptions();
+  }
+
+  function handleSegmentSubmit(event) {
+    event.preventDefault();
+    const service=findService(els.segmentService.value);
+    const stakeStart=els.segmentStakeStart.value.trim(),stakeEnd=els.segmentStakeEnd.value.trim(),side=els.segmentSide.value;
+    const quantity=Math.max(0,parseNum(els.segmentQuantity.value));
+    if(!service){showToast("Selecione um serviço cadastrado.");return;}
+    if(!stakeStart||!stakeEnd){showToast("Informe a estaca inicial e a estaca final.");return;}
+    if(!SIDE_LABELS[side]){showToast("Selecione lado direito, lado esquerdo ou canteiro central.");els.segmentSide.focus();return;}
+    if(quantity<=0){showToast("Informe uma quantidade planejada maior que zero.");return;}
+    const id=els.segmentId.value||uid("trecho");
+    const segment={id,serviceId:service.id,serviceName:service.name,stakeStart,stakeEnd,side,quantity,unit:els.segmentUnit.value||service.targetUnit,note:els.segmentNote.value.trim(),updatedAt:new Date().toISOString()};
+    const index=segments.findIndex(item=>item.id===id);
+    if(index>=0) segments[index]=segment; else segments.push(segment);
+    saveSegments(); resetSegmentForm(); renderSegmentPlanner(); invalidateResults();
+    showToast(index>=0?"Trecho atualizado.":"Trecho adicionado ao planejamento.");
+  }
+
+  function editSegment(id) {
+    const segment=segments.find(item=>item.id===id); if(!segment) return;
+    if(!findService(segment.serviceId)){showToast("A composição vinculada a este trecho não existe mais.");return;}
+    els.segmentId.value=segment.id;
+    const linkedService=findService(segment.serviceId);
+    if(linkedService){els.segmentCategory.value=linkedService.category;updateSegmentServiceOptions(segment.serviceId);}
+    els.segmentService.value=segment.serviceId; updateSegmentUnitOptions(segment.unit);
+    els.segmentStakeStart.value=segment.stakeStart; els.segmentStakeEnd.value=segment.stakeEnd; els.segmentSide.value=segment.side||""; els.segmentQuantity.value=segment.quantity; els.segmentNote.value=segment.note||"";
+    els.saveSegment.textContent="Salvar alteração"; els.cancelSegmentEdit.classList.remove("hidden");
+    els.segmentStakeStart.focus();
+  }
+
+  function deleteSegment(id) {
+    const segment=segments.find(item=>item.id===id); if(!segment) return;
+    if(confirm(`Excluir o trecho da estaca ${segment.stakeStart} à ${segment.stakeEnd}?`)){
+      segments=segments.filter(item=>item.id!==id); saveSegments(); resetSegmentForm(); renderSegmentPlanner(); invalidateResults(); showToast("Trecho excluído.");
+    }
+  }
+
+  function invalidateResults() {
+    lastResults=[]; lastSegmentResults=[]; renderResults(0);
+  }
+
+  function serviceCard(service,index,firstRender=false) {
+    const params = parameterFields(service);
+    const rows = service.materials.map((item,i)=>`<tr>
+      <td><input class="control material-input" data-service="${esc(service.id)}" data-item="${i}" data-key="name" value="${esc(item.name)}" aria-label="Nome do insumo"></td>
+      <td><input class="control material-input num" data-service="${esc(service.id)}" data-item="${i}" data-key="coefficient" type="number" min="0" step="any" value="${esc(item.coefficient)}" aria-label="Índice de consumo"></td>
+      <td><select class="control material-input" data-service="${esc(service.id)}" data-item="${i}" data-key="basis">${basisOptions(item.basis,service.engine)}</select></td>
+      <td><input class="control material-input" data-service="${esc(service.id)}" data-item="${i}" data-key="unit" value="${esc(item.unit)}" aria-label="Unidade do insumo"></td>
+      <td><input class="control material-input num" data-service="${esc(service.id)}" data-item="${i}" data-key="price" type="number" min="0" step="any" value="${esc(item.price||0)}" aria-label="Valor unitário do insumo"></td>
+      <td><button class="icon-btn remove-material" data-service="${esc(service.id)}" data-item="${i}" title="Remover insumo" aria-label="Remover insumo">×</button></td>
+    </tr>`).join("");
+    const keepOpen=openServiceIds.has(service.id);
+    return `<details class="service-card" data-service="${esc(service.id)}" ${keepOpen?"open":""}><summary><span class="service-summary-name">${esc(service.name)}</span><span class="category-chip">${esc(service.category)}</span></summary><div class="service-body">
+      <div class="edit-grid"><div class="field"><label>Nome do serviço</label><input class="control service-input" data-service="${esc(service.id)}" data-key="name" value="${esc(service.name)}"></div><div class="field"><label>Categoria</label><select class="control service-input" data-service="${esc(service.id)}" data-key="category">${categoryOptions(service.category)}</select></div></div>
+      ${params}
+      <div class="composition-table"><table><thead><tr><th>Insumo</th><th class="num">Índice</th><th>Base de cálculo</th><th>Unidade</th><th class="num">Valor unitário (R$)</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="service-actions"><button class="btn-app btn-outline-app btn-sm-app add-material" data-service="${esc(service.id)}">+ Adicionar insumo</button><button class="btn-app btn-danger-quiet btn-sm-app remove-service" data-service="${esc(service.id)}">Excluir serviço</button></div>
+    </div></details>`;
+  }
+
+  function selectField(service,key,label,options) {
+    return `<div class="field"><label>${esc(label)}</label><select class="control pipe-param-input" data-service="${esc(service.id)}" data-key="${esc(key)}">${options.map(([value,text])=>`<option value="${esc(value)}" ${String(value)===String(service.params[key])?"selected":""}>${esc(text)}</option>`).join("")}</select></div>`;
+  }
+
+  function fixedParamField(label,value,suffix="") {
+    return `<div class="field"><label>${esc(label)}${suffix?` (${esc(suffix)})`:""}</label><div class="control fixed-control" aria-readonly="true">${esc(value)}</div></div>`;
+  }
+
+  function numericSelectField(service,key,label,options) {
+    return `<div class="field"><label>${esc(label)}</label><select class="control param-input" data-service="${esc(service.id)}" data-key="${esc(key)}">${options.map(([value,text])=>`<option value="${esc(value)}" ${Number(value)===Number(service.params[key])?"selected":""}>${esc(text)}</option>`).join("")}</select></div>`;
+  }
+
+  function textSelectField(service,key,label,options) {
+    return `<div class="field"><label>${esc(label)}</label><select class="control text-param-input" data-service="${esc(service.id)}" data-key="${esc(key)}">${options.map(([value,text])=>`<option value="${esc(value)}" ${String(value)===String(service.params[key])?"selected":""}>${esc(text)}</option>`).join("")}</select></div>`;
+  }
+
+  function parameterFields(service) {
+    const p=service.params||{};
+    if(service.engine==="layer") return `<div class="param-grid">${paramField(service,"width","Largura",p.width,"m")}${paramField(service,"thickness","Espessura",p.thickness,"m")}${paramField(service,"density","Densidade",p.density,"t/m³")}${paramField(service,"supplyFactor","Fator de compra",p.supplyFactor,"×")}</div>`;
+    if(service.engine==="pipe") return pipeParameterFields(service);
+    if(service.engine==="culvert") return culvertParameterFields(service);
+    if(["catchBasin","clp"].includes(service.engine)) {
+      const isCatch=service.engine==="catchBasin";
+      return `<div class="source-note" style="margin:0 0 11px;padding:10px 12px"><div class="note-icon">i</div><div><strong>${isCatch?"Boca de lobo":"CLP"} paramétrica.</strong> Usa somente bloco estrutural 19×19×39. O concreto 20 MPa inclui consumo por bloco, regularização do fundo e cinta. A cinta padrão possui seção de 20 × 20 cm.</div></div><div class="param-grid">${paramField(service,"width","Largura interna",p.width,"m")}${paramField(service,"length","Comprimento interno",p.length,"m")}${paramField(service,"depth","Profundidade",p.depth,"m")}${paramField(service,"blockRate","Taxa de blocos",p.blockRate,"un/m²")}${paramField(service,"concretePerBlock","Concreto por bloco",p.concretePerBlock,"m³/un")}${paramField(service,"pillarsPerUnit","Pilares por caixa",p.pillarsPerUnit,"un")}${isCatch?paramField(service,"guidesPerUnit","Guias chapéu por caixa",p.guidesPerUnit,"un"):""}${paramField(service,"bottomThickness","Regularização do fundo",p.bottomThickness,"m")}${paramField(service,"beltWidth","Largura da cinta",p.beltWidth,"m")}${paramField(service,"beltHeight","Altura da cinta",p.beltHeight,"m")}</div>`;
+    }
+    if(service.engine==="manhole") return `<div class="source-note" style="margin:0 0 11px;padding:10px 12px"><div class="note-icon">i</div><div><strong>Poço de visita.</strong> A altura define a quantidade de tubos DN 800 PA-2 PB. Cada poço recebe uma tampa de aço.</div></div><div class="param-grid">${paramField(service,"height","Altura do poço",p.height,"m")}${fixedParamField("Tubo da composição","DN 800 PA-2 PB")}${paramField(service,"pipeLength","Comprimento útil do tubo",p.pipeLength,"m")}${fixedParamField("Tampa de aço","1 un/poço")}</div>`;
+    if(service.engine==="surface") return `<div class="source-note" style="margin:0 0 11px;padding:10px 12px"><div class="note-icon">i</div><div><strong>Tratamento asfáltico por extensão.</strong> Área = comprimento lançado × largura da via; toneladas = área × taxa de aplicação. Também é possível lançar uma área pronta em m².</div></div><div class="param-grid">${paramField(service,"width","Largura da via",p.width,"m")}${paramField(service,"applicationRate","Taxa de aplicação",p.applicationRate,"t/m²")}${fixedParamField("Unidade de saída","t")}</div>`;
+    if(service.engine==="asphaltCoating") return `<div class="source-note" style="margin:0 0 11px;padding:10px 12px"><div class="note-icon">i</div><div><strong>${esc(service.name)}.</strong> Área = comprimento × largura da via. Informe as taxas definidas no projeto: os valores iniciais ficam zerados para não assumir um consumo sem confirmação. Referência: ${esc(service.reference||"Especificação DNIT aplicável")}.</div></div><div class="param-grid">${paramField(service,"width","Largura da via",p.width,"m")}${paramField(service,"binderRate","Taxa de ligante",p.binderRate,"t/m²")}${paramField(service,"aggregateRate","Taxa de agregado",p.aggregateRate,"t/m²")}${fixedParamField("Referência",service.reference||"DNIT")}</div>`;
+    if(service.engine==="wall") return `<div class="source-note" style="margin:0 0 11px;padding:10px 12px"><div class="note-icon">i</div><div><strong>Muro paramétrico.</strong> Escolha a alvenaria; área = comprimento × altura; pilares = comprimento arredondado para cima + 1; uma Coluna POP por pilar. O baldrame é calculado em concreto ciclópico por extensão × largura × altura.</div></div><div class="param-grid">${textSelectField(service,"masonryType","Tipo de alvenaria",Object.entries(WALL_MASONRY_TYPES).map(([value,item])=>[value,item.label]))}${paramField(service,"height","Altura do muro",p.height,"m")}${paramField(service,"blockRate","Taxa de blocos",p.blockRate,"un/m²")}${paramField(service,"pillarWidth","Largura do pilar",p.pillarWidth,"m")}${paramField(service,"pillarThickness","Espessura do pilar",p.pillarThickness,"m")}${paramField(service,"beltWidth","Largura da cinta",p.beltWidth,"m")}${paramField(service,"beltHeight","Altura da cinta",p.beltHeight,"m")}${paramField(service,"foundationWidth","Largura do baldrame",p.foundationWidth,"m")}${paramField(service,"foundationHeight","Altura do baldrame",p.foundationHeight,"m")}${fixedParamField("Critério de pilares","⌈comprimento⌉ + 1")}</div>`;
+    if(["sidewalk","gutter"].includes(service.engine)) return `<div class="source-note" style="margin:0 0 11px;padding:10px 12px"><div class="note-icon">i</div><div><strong>${service.engine==="sidewalk"?"Calçada":"Sarjeta"} de concreto 20 MPa.</strong> Volume = extensão × largura × espessura.</div></div><div class="param-grid">${paramField(service,"width","Largura",p.width,"m")}${paramField(service,"thickness","Espessura",p.thickness,"m")}</div>`;
+    if(service.engine==="curb") return `<div class="source-note" style="margin:0 0 11px;padding:10px 12px"><div class="note-icon">i</div><div><strong>Meio-fio pré-moldado.</strong> Quantidade = extensão ÷ 0,80 m, sempre arredondada para cima.</div></div><div class="param-grid">${fixedParamField("Comprimento da peça",number2.format(p.pieceLength||.8),"m")}${fixedParamField("Arredondamento","Sempre para cima")}</div>`;
+    if(service.engine==="culvertMouth") { const rate=culvertMouthRate(p.diameter,p.skew); return `<div class="source-note" style="margin:0 0 11px;padding:10px 12px"><div class="note-icon">i</div><div><strong>Boca normal/esconsa de BSTC simples.</strong> Volume unitário conforme desenho 6.5 do Álbum IPR 736/DNIT. A composição retorna somente concreto, sem aço.</div></div><div class="param-grid">${numericSelectField(service,"diameter","Diâmetro do bueiro",PIPE_DIAMETERS.map(v=>[v,`DN ${v} mm`]))}${numericSelectField(service,"skew","Esconsidade",[0,15,30,45].map(v=>[v,`${v}°`]))}${fixedParamField("Concreto por boca",number4.format(rate),"m³/un")}</div>`; }
+    return `<div class="source-note" style="margin:0 0 13px;padding:10px 12px"><div class="note-icon">×</div><div>A quantidade de cada insumo é o índice multiplicado diretamente pela meta informada.</div></div>`;
+  }
+
+  function pipeParameterFields(service) {
+    const p=service.params,n=pipePbNorm(p.diameter),g=pipeGeometryFor(service);
+    return `<div class="source-note" style="margin:0 0 11px;padding:10px 12px"><div class="note-icon">i</div><div><strong>Tubulação PB com cálculo geométrico.</strong> Informe somente as dimensões executivas do berço e contraberço. O ComposerM calcula os volumes de concreto descontando a geometria externa do corpo e da bolsa. Tubos continuam sendo lançados por extensão e perda técnica.</div></div><div class="param-grid">
+      ${fixedParamField("Diâmetro nominal (fixo)",`DN ${p.diameter} mm`)}
+      ${selectField(service,"classCode","Classe do tubo",PIPE_CLASSES.map(v=>[v,pipeClassLabel(v)]))}
+      ${fixedParamField("Junta","PB — Ponta e Bolsa")}
+      ${fixedParamField("Comprimento útil ABNT",number4.format(n.usefulLengthMm/1000),"m")}
+      ${pipeParamField(service,"lossPercent","Perda técnica dos tubos",p.lossPercent,"%")}
+      ${pipeParamField(service,"beddingWidth","Largura do berço — LB",p.beddingWidth,"m")}
+      ${pipeParamField(service,"beddingHeight","Espessura/altura do berço — hB",p.beddingHeight,"m")}
+      ${pipeParamField(service,"counterBeddingWidth","Largura do contraberço — LCB",p.counterBeddingWidth,"m")}
+      ${pipeParamField(service,"counterBeddingHeight","Altura do contraberço — hCB",p.counterBeddingHeight,"m")}
+    </div>${pipeGeometrySummary(service)}
+    <details class="pipe-advanced"><summary>Dados avançados PB / conferência dimensional</summary><div class="param-grid">
+      ${fixedParamField("B mínimo ABNT",number4.format(n.bellLengthMm/1000),"m")}
+      ${fixedParamField("C máximo ABNT",number4.format(n.clearanceMm/1000),"m")}
+      ${fixedParamField("D mínimo ABNT (armado)",number4.format(n.wallMinMm/1000),"m")}
+      ${pipeParamField(service,"wallThickness","Espessura de parede adotada",g.wall,"m")}
+      ${pipeParamField(service,"bellLength","Comprimento de bolsa adotado",g.bellLength,"m")}
+      ${pipeParamField(service,"clearance","Folga do encaixe adotada",g.clearance,"m")}
+      ${pipeParamField(service,"bellOuterDiameter","Ø externo real da bolsa (0 = automático)",p.bellOuterDiameter||0,"m")}
+      ${pipeParamField(service,"transitionLength","Comprimento da transição PB",g.transitionLength,"m")}
+    </div></details>`;
+  }
+
+  function culvertParameterFields(service) {
+    const p=service.params;
+    return `<div class="source-note" style="margin:0 0 11px;padding:10px 12px"><div class="note-icon">i</div><div><strong>Motor de aduelas.</strong> As dimensões são fixas conforme o nome. Bidim por junta = faixa × [largura externa + 2 × (altura + espessura + acréscimo)]. Não há contraberço.</div></div><div class="param-grid">
+      ${fixedParamField("Largura interna (fixa)",dimensionLabel(p.width),"m")}
+      ${fixedParamField("Altura interna (fixa)",dimensionLabel(p.height),"m")}
+      ${culvertParamField(service,"pieceLength","Comprimento útil da peça",p.pieceLength,"m")}
+      ${culvertParamField(service,"lossPercent","Perda técnica",p.lossPercent,"%")}
+      ${culvertParamField(service,"beddingRate","Taxa de concreto do berço",p.beddingRate,"m³/un")}
+      ${culvertParamField(service,"wallThickness","Espessura da aduela",p.wallThickness,"m")}
+      ${culvertParamField(service,"bidimBandWidth","Largura da faixa de Bidim",p.bidimBandWidth,"m")}
+      ${culvertParamField(service,"bidimExtra","Acréscimo lateral ajustável",p.bidimExtra,"m")}
+    </div>`;
+  }
+
+  function paramField(service,key,label,value,suffix) {
+    return `<div class="field"><label>${esc(label)} (${esc(suffix)})</label><input class="control param-input num" data-service="${esc(service.id)}" data-key="${esc(key)}" type="number" min="0" step="any" value="${esc(value)}"></div>`;
+  }
+
+  function pipeParamField(service,key,label,value,suffix) {
+    return `<div class="field"><label>${esc(label)} (${esc(suffix)})</label><input class="control pipe-param-input num" data-service="${esc(service.id)}" data-key="${esc(key)}" type="number" min="0" step="any" value="${esc(value)}"></div>`;
+  }
+
+  function culvertParamField(service,key,label,value,suffix) {
+    return `<div class="field"><label>${esc(label)} (${esc(suffix)})</label><input class="control culvert-param-input num" data-service="${esc(service.id)}" data-key="${esc(key)}" type="number" min="0" step="any" value="${esc(value)}"></div>`;
+  }
+
+  function categoryOptions(selected) { return ["Drenagem","Terraplenagem","Pavimentação","Obras Complementares","Outros"].map(v=>`<option ${v===selected?"selected":""}>${v}</option>`).join(""); }
+  function basisOptions(selected, engine) {
+    const bases={
+      layer:[["meta","Meta informada"],["length","Extensão (m)"],["area","Área (m²)"],["compacted","Volume compactado (m³)"],["volume","Volume de compra (m³)"],["mass","Massa de compra (t)"]],
+      pipe:[["meta","Meta informada"],["length","Extensão (m)"],["pieces","Quantidade de tubos para compra (un)"],["installedPieces","Quantidade instalada (un)"],["bedding","Berço geométrico (m³)"],["counterBedding","Contraberço geométrico (m³)"]],
+      culvert:[["meta","Meta informada"],["length","Extensão (m)"],["pieces","Quantidade de aduelas (un)"],["bedding","Berço (peças × m³/un)"],["bidim","Área de Bidim (m²)"]],
+      catchBasin:[["meta","Bocas de lobo (un)"],["blocks","Blocos calculados (un)"],["concrete","Concreto total (m³)"],["pillars","Pilares (un)"],["guides","Guias chapéu (un)"],["trellis","Perímetro/Treliça (m)"]],
+      clp:[["meta","CLPs (un)"],["blocks","Blocos calculados (un)"],["concrete","Concreto total (m³)"],["pillars","Pilares (un)"],["trellis","Perímetro/Treliça (m)"]],
+      manhole:[["meta","Poços de visita (un)"],["pieces","Tubos DN 800 (un)"],["lids","Tampas de aço (un)"]],
+      surface:[["meta","Meta informada"],["length","Extensão (m)"],["area","Área tratada (m²)"],["mass","Ligante calculado (t)"]],
+      asphaltCoating:[["meta","Meta informada"],["length","Extensão (m)"],["area","Área tratada (m²)"],["binderMass","Ligante calculado (t)"],["aggregateMass","Agregado calculado (t)"]],
+      wall:[["meta","Extensão do muro (m)"],["area","Área de alvenaria (m²)"],["blocks","Blocos calculados (un)"],["concrete","Concreto 20 MPa de pilares e cinta (m³)"],["foundation","Concreto ciclópico do baldrame (m³)"],["pillars","Pilares/Colunas POP (un)"],["trellis","Treliça (m)"]],
+      sidewalk:[["meta","Extensão (m)"],["area","Área (m²)"],["volume","Concreto calculado (m³)"]],
+      gutter:[["meta","Extensão (m)"],["area","Área (m²)"],["volume","Concreto calculado (m³)"]],
+      curb:[["meta","Extensão (m)"],["pieces","Meios-fios calculados (un)"]],
+      culvertMouth:[["meta","Bocas de bueiro (un)"],["concrete","Concreto DNIT (m³)"]]
+    };
+    const options=bases[engine]||[["meta","Meta informada"]];
+    return options.map(([value,label])=>`<option value="${value}" ${value===selected?"selected":""}>${label}</option>`).join("");
+  }
+
+  function targetUnits(service) {
+    return service.engine === "layer" ? [["km","km"],["m","m"],["m²","m²"],["m³","m³"],["t","t"]] : service.engine === "pipe" ? [["m","m"],["km","km"]] : service.engine === "culvert" ? [["m","m"],["km","km"],["un","un"]] : ["surface","asphaltCoating"].includes(service.engine) ? [["m","m"],["km","km"],["m²","m²"]] : ["wall","sidewalk","gutter","curb"].includes(service.engine) ? [["m","m"]] : [[service.targetUnit||"un",service.targetUnit||"un"]];
+  }
+
+  function targetCard(service) {
+    const preview = service.engine === "layer" ? geometryPreview(service) : service.engine === "pipe" ? pipePreview(service) : service.engine === "culvert" ? culvertPreview(service) : "composição direta";
+    return `<div class="target-row"><input class="check target-enabled" type="checkbox" data-service="${esc(service.id)}" ${service.enabled?"checked":""} aria-label="Ativar ${esc(service.name)}"><div class="target-name"><strong title="${esc(service.name)}">${esc(service.name)}</strong><small>${esc(preview)}</small></div><input class="control target-input num" data-service="${esc(service.id)}" type="number" min="0" step="any" value="${esc(service.target||0)}" aria-label="Meta de ${esc(service.name)}"><select class="control target-unit" data-service="${esc(service.id)}" aria-label="Unidade da meta">${targetUnits(service).map(([v,l])=>`<option value="${v}" ${v===service.targetUnit?"selected":""}>${l}</option>`).join("")}</select></div>`;
+  }
+
+  function geometryPreview(service) {
+    const p=service.params; return `${number2.format(p.width)} m × ${number2.format(p.thickness)} m · ${number2.format(p.density)} t/m³`;
+  }
+
+  function pipePreview(service) {
+    const p=service.params,g=pipeGeometryFor(service); return `DN ${p.diameter} · ${pipeClassLabel(p.classCode)} · PB · ${number2.format(g.useful)} m · geom. ${g.beddingWidth&&g.counterWidth?"ativa":"a preencher"}`;
+  }
+
+  function culvertPreview(service) {
+    const p=service.params; return `${dimensionLabel(p.width)} × ${dimensionLabel(p.height)} m · peça ${number2.format(p.pieceLength)} m`;
+  }
+
+  function findService(id) { return services.find(service => service.id === id); }
+
+  function bindSimulatorInputs() {
+    document.querySelectorAll(".service-input").forEach(input=>input.addEventListener("change",()=>{ const service=findService(input.dataset.service); service[input.dataset.key]=input.value; saveServices(); renderSimulator(); invalidateResults(); }));
+    document.querySelectorAll(".param-input").forEach(input=>input.addEventListener("change",()=>{ const service=findService(input.dataset.service); service.params[input.dataset.key]=parseNum(input.value); saveServices(); renderSimulator(); invalidateResults(); }));
+    document.querySelectorAll(".text-param-input").forEach(input=>input.addEventListener("change",()=>{const service=findService(input.dataset.service);service.params[input.dataset.key]=input.value;if(service.engine==="wall")syncWallIdentity(service,true);saveServices();renderSimulator();invalidateResults();}));
+    document.querySelectorAll(".pipe-param-input").forEach(input=>input.addEventListener("change",()=>{ const service=findService(input.dataset.service); service.params[input.dataset.key]=input.type==="number"?parseNum(input.value):input.value; syncPipeIdentity(service); saveServices(); renderSimulator(); invalidateResults(); }));
+    document.querySelectorAll(".culvert-param-input").forEach(input=>input.addEventListener("change",()=>{const service=findService(input.dataset.service);service.params[input.dataset.key]=parseNum(input.value);syncCulvertIdentity(service);saveServices();renderSimulator();invalidateResults();}));
+    document.querySelectorAll(".material-input").forEach(input=>input.addEventListener("change",()=>{ const service=findService(input.dataset.service); const item=service.materials[Number(input.dataset.item)]; item[input.dataset.key]=["coefficient","price"].includes(input.dataset.key)?parseNum(input.value):input.value.trim(); saveServices(); invalidateResults(); }));
+    document.querySelectorAll(".target-enabled").forEach(input=>input.addEventListener("change",()=>{findService(input.dataset.service).enabled=input.checked;saveServices();}));
+    document.querySelectorAll(".target-input").forEach(input=>input.addEventListener("change",()=>{findService(input.dataset.service).target=parseNum(input.value);saveServices();}));
+    document.querySelectorAll(".target-unit").forEach(input=>input.addEventListener("change",()=>{findService(input.dataset.service).targetUnit=input.value;saveServices();renderSimulator();}));
+    document.querySelectorAll(".add-material").forEach(button=>button.addEventListener("click",()=>{const service=findService(button.dataset.service);service.materials.push({name:"Novo insumo",coefficient:1,basis:["pipe","culvert"].includes(service.engine)?"length":"meta",unit:"un",price:0});saveServices();renderSimulator();invalidateResults();}));
+    document.querySelectorAll(".remove-material").forEach(button=>button.addEventListener("click",()=>{const service=findService(button.dataset.service);service.materials.splice(Number(button.dataset.item),1);saveServices();renderSimulator();invalidateResults();}));
+    document.querySelectorAll(".remove-service").forEach(button=>button.addEventListener("click",()=>{const service=findService(button.dataset.service);const linked=segments.filter(item=>item.serviceId===service.id).length;const warning=linked?` Os ${linked} trecho(s) vinculados também serão removidos.`:"";if(confirm(`Excluir o serviço “${service.name}”?${warning}`)){services=services.filter(s=>s.id!==service.id);segments=segments.filter(item=>item.serviceId!==service.id);saveServices();saveSegments();renderSimulator();invalidateResults();}}));
+  }
+
+  function culvertMouthRate(diameter,skew) {
+    return CULVERT_MOUTH_CONCRETE[Number(diameter)]?.[Number(skew)]||0;
+  }
+
+  function metricsFor(service) {
+    const target=Math.max(0,parseNum(service.target));
+    if(service.engine==="pipe") {
+      const p=service.params,g=pipeGeometryFor(service);
+      const length=service.targetUnit==="km"?target*1000:target;
+      const installedPieces=length/Math.max(.01,g.useful);
+      const pieces=installedPieces*(1+Math.max(0,parseNum(p.lossPercent))/100);
+      const geometryReady=g.beddingWidth>0&&g.beddingHeight>0&&g.counterWidth>0&&g.counterHeight>0;
+      const bedding=geometryReady?installedPieces*g.beddingPerPiece:installedPieces*Math.max(0,parseNum(p.beddingRate));
+      const counterBedding=geometryReady?installedPieces*g.counterPerPiece:installedPieces*Math.max(0,parseNum(p.counterBeddingRate));
+      return {meta:target,length,pieces,installedPieces,bedding,counterBedding,area:0,compacted:0,volume:0,mass:0};
+    }
+    if(service.engine==="culvert") {
+      const p=service.params; let length=0,pieces=0;
+      if(service.targetUnit==="un"){pieces=target;length=pieces*Math.max(.01,parseNum(p.pieceLength));}
+      else {length=service.targetUnit==="km"?target*1000:target;pieces=length/Math.max(.01,parseNum(p.pieceLength))*(1+Math.max(0,parseNum(p.lossPercent))/100);}
+      const bedding=pieces*Math.max(0,parseNum(p.beddingRate));
+      const thickness=Math.max(0,parseNum(p.wallThickness)),band=Math.max(0,parseNum(p.bidimBandWidth)),extra=Math.max(0,parseNum(p.bidimExtra));
+      const bidim=pieces*band*((Math.max(0,parseNum(p.width))+2*thickness)+2*(Math.max(0,parseNum(p.height))+thickness+extra));
+      return {meta:target,length,pieces,bedding,bidim,area:0,compacted:0,volume:0,mass:0};
+    }
+    if(["catchBasin","clp"].includes(service.engine)) {
+      const p=service.params,perimeter=2*(Math.max(0,parseNum(p.width))+Math.max(0,parseNum(p.length)));
+      const area=target*perimeter*Math.max(0,parseNum(p.depth));
+      const blocks=area*Math.max(0,parseNum(p.blockRate));
+      const blockConcrete=blocks*Math.max(0,parseNum(p.concretePerBlock));
+      const bottomConcrete=target*Math.max(0,parseNum(p.width))*Math.max(0,parseNum(p.length))*Math.max(0,parseNum(p.bottomThickness));
+      const beltConcrete=target*perimeter*Math.max(0,parseNum(p.beltWidth))*Math.max(0,parseNum(p.beltHeight));
+      const concrete=blockConcrete+bottomConcrete+beltConcrete;
+      const guides=service.engine==="catchBasin"?target*Math.max(0,parseNum(p.guidesPerUnit)):0;
+      return {meta:target,area,blocks,concrete,pillars:target*Math.max(0,parseNum(p.pillarsPerUnit)),guides,trellis:target*perimeter,length:0,compacted:0,volume:0,mass:0};
+    }
+    if(service.engine==="manhole") {
+      const p=service.params,pieces=target*Math.ceil(Math.max(0,parseNum(p.height))/Math.max(.01,parseNum(p.pipeLength)||1));
+      return {meta:target,pieces,lids:target,length:0,area:0,compacted:0,volume:0,mass:0};
+    }
+    if(service.engine==="surface") {
+      const length=service.targetUnit==="km"?target*1000:service.targetUnit==="m"?target:0;
+      const area=service.targetUnit==="m²"?target:length*Math.max(0,parseNum(service.params.width));
+      const mass=area*Math.max(0,parseNum(service.params.applicationRate));
+      return {meta:target,area,mass,length,compacted:0,volume:0};
+    }
+    if(service.engine==="asphaltCoating") {
+      const length=service.targetUnit==="km"?target*1000:service.targetUnit==="m"?target:0;
+      const area=service.targetUnit==="m²"?target:length*Math.max(0,parseNum(service.params.width));
+      const binderMass=area*Math.max(0,parseNum(service.params.binderRate));
+      const aggregateMass=area*Math.max(0,parseNum(service.params.aggregateRate));
+      return {meta:target,length,area,binderMass,aggregateMass,mass:binderMass+aggregateMass,compacted:0,volume:0};
+    }
+    if(service.engine==="wall") {
+      const p=service.params,length=target,height=Math.max(0,parseNum(p.height)),area=length*height,pillars=Math.ceil(length)+1;
+      const blocks=area*Math.max(0,parseNum(p.blockRate));
+      const pillarConcrete=pillars*Math.max(0,parseNum(p.pillarWidth))*Math.max(0,parseNum(p.pillarThickness))*height;
+      const beltConcrete=length*Math.max(0,parseNum(p.beltWidth))*Math.max(0,parseNum(p.beltHeight));
+      const foundation=length*Math.max(0,parseNum(p.foundationWidth))*Math.max(0,parseNum(p.foundationHeight));
+      return {meta:target,length,area,blocks,pillars,trellis:length,concrete:pillarConcrete+beltConcrete,foundation,compacted:0,volume:0,mass:0};
+    }
+    if(["sidewalk","gutter"].includes(service.engine)) {
+      const p=service.params,length=target,area=length*Math.max(0,parseNum(p.width)),volume=area*Math.max(0,parseNum(p.thickness));
+      return {meta:target,length,area,volume,compacted:volume,mass:0};
+    }
+    if(service.engine==="curb") {
+      const length=target,pieces=Math.ceil(length/Math.max(.01,parseNum(service.params.pieceLength)||.80));
+      return {meta:target,length,pieces,area:0,compacted:0,volume:0,mass:0};
+    }
+    if(service.engine==="culvertMouth") {
+      const concrete=target*culvertMouthRate(service.params.diameter,service.params.skew);
+      return {meta:target,concrete,length:0,area:0,compacted:0,volume:0,mass:0};
+    }
+    if(service.engine!=="layer") return {meta:target,length:target,area:target,compacted:target,volume:target,mass:target};
+    const p=service.params; let length=0,area=0,compacted=0,mass=0;
+    if(service.targetUnit==="km") length=target*1000;
+    else if(service.targetUnit==="m") length=target;
+    if(length) area=length*Math.max(0,p.width);
+    else if(service.targetUnit==="m²") area=target;
+    if(area) compacted=area*Math.max(0,p.thickness);
+    else if(service.targetUnit==="m³") compacted=target;
+    const factor=Math.max(0,p.supplyFactor||1);
+    let volume=compacted*factor;
+    if(service.targetUnit==="t") {mass=target; volume=p.density>0?mass/p.density:0; compacted=factor>0?volume/factor:volume;}
+    else mass=volume*Math.max(0,p.density);
+    return {meta:target,length,area,compacted,volume,mass};
+  }
+
+  function isDiscrete(unit) { return ["UN","UND","UNIDADE","SACO","SC","PECA","PC","ROLO"].includes(norm(unit)); }
+
+  function localIso(date) {
+    const shifted=new Date(date.getTime()-date.getTimezoneOffset()*60000);
+    return shifted.toISOString().slice(0,10);
+  }
+
+  function planningDays() {
+    if(!planningPeriod.start||!planningPeriod.end) return 0;
+    const start=new Date(`${planningPeriod.start}T00:00:00Z`),end=new Date(`${planningPeriod.end}T00:00:00Z`);
+    return end<start?0:Math.round((end-start)/86400000)+1;
+  }
+
+  function loadPlanningPeriod() {
+    const today=new Date(),future=new Date(today.getTime()+30*86400000);
+    planningPeriod={projectName:DEFAULT_PROJECT_NAME,start:localIso(today),end:localIso(future)};
+    try {
+      const saved=JSON.parse(localStorage.getItem(PERIOD_STORAGE_KEY));
+      if(saved?.start&&saved?.end) planningPeriod={projectName:String(saved.projectName||DEFAULT_PROJECT_NAME).trim()||DEFAULT_PROJECT_NAME,start:saved.start,end:saved.end};
+    } catch {}
+    els.projectName.value=planningPeriod.projectName;
+    els.planningStart.value=planningPeriod.start;
+    els.planningEnd.value=planningPeriod.end;
+    updateProjectBranding();
+    updatePeriodUI();
+  }
+
+  function savePlanningPeriod() {
+    planningPeriod={projectName:els.projectName.value.trim()||DEFAULT_PROJECT_NAME,start:els.planningStart.value,end:els.planningEnd.value};
+    els.projectName.value=planningPeriod.projectName;
+    localStorage.setItem(PERIOD_STORAGE_KEY,JSON.stringify(planningPeriod));
+    updateProjectBranding();
+    lastResults=[]; lastSegmentResults=[]; renderResults(0); updatePeriodUI();
+  }
+
+  function updateProjectBranding() {
+    const name=(els.projectName?.value||planningPeriod.projectName||DEFAULT_PROJECT_NAME).trim()||DEFAULT_PROJECT_NAME;
+    if(els.projectTitle) els.projectTitle.textContent=name;
+    if(els.resultTitle) els.resultTitle.textContent=`${name} · Quantitativos por Estaqueamento`;
+    document.title=`${name} · ComposerM · Planejamento de Materiais`;
+  }
+
+  function updatePeriodUI() {
+    const days=planningDays();
+    els.planningDays.textContent=days?`${integer.format(days)} ${days===1?"dia":"dias"}`:"Período inválido";
+    els.headerRange.textContent=days?`${formatDate(planningPeriod.start)} a ${formatDate(planningPeriod.end)} · ${integer.format(days)} dias`:"Ajuste o período de planejamento";
+  }
+
+  function processPurchases(scroll=true) {
+    const days=planningDays();
+    if(!planningPeriod.start||!planningPeriod.end){showToast("Informe as datas inicial e final do planejamento.");els.planningStart.focus();return [];}
+    if(days<=0){showToast("A data final deve ser igual ou posterior à data inicial.");els.planningEnd.focus();return [];}
+    const consolidated=new Map(); const round=els.roundDiscrete.checked;
+    lastSegmentResults=[];
+    segments.forEach(segment=>{
+      const service=findService(segment.serviceId); if(!service||parseNum(segment.quantity)<=0) return;
+      const runtime={...service,target:segment.quantity,targetUnit:segment.unit};
+      const metrics=metricsFor(runtime),materials=[];
+      if(round&&service.engine==="pipe"){
+        // Arredondamento e perda atuam somente na compra dos tubos. O concreto segue a extensão efetivamente instalada.
+        metrics.pieces=Math.ceil(metrics.pieces);
+      }
+      if(round&&service.engine==="culvert"){
+        metrics.pieces=Math.ceil(metrics.pieces);
+        metrics.bedding=metrics.pieces*Math.max(0,parseNum(service.params.beddingRate));
+        const p=service.params,thickness=Math.max(0,parseNum(p.wallThickness)),band=Math.max(0,parseNum(p.bidimBandWidth)),extra=Math.max(0,parseNum(p.bidimExtra));
+        metrics.bidim=metrics.pieces*band*((Math.max(0,parseNum(p.width))+2*thickness)+2*(Math.max(0,parseNum(p.height))+thickness+extra));
+      }
+      service.materials.forEach(item=>{
+        const coefficient=Math.max(0,parseNum(item.coefficient)); let qty=coefficient*(metrics[item.basis]??metrics.meta);
+        if(!Number.isFinite(qty)||qty<=0||!item.name.trim()) return;
+        const unit=item.unit.trim()||"un"; if(round&&isDiscrete(unit)) qty=Math.ceil(qty);
+        const unitPrice=Math.max(0,parseNum(item.price)),cost=qty*unitPrice;
+        materials.push({material:item.name.trim(),unit,quantity:qty,unitPrice,cost});
+        const key=`${norm(item.name)}|${norm(unit)}`; const current=consolidated.get(key)||{material:item.name.trim(),unit,quantity:0,cost:0,origins:new Set(),segments:new Set()};
+        current.quantity+=qty; current.cost+=cost; current.origins.add(service.name); current.segments.add(segment.id); consolidated.set(key,current);
+      });
+      if(materials.length) lastSegmentResults.push({...segment,serviceName:service.name,category:service.category,materials});
+    });
+    const active=lastSegmentResults.length;
+    lastResults=[...consolidated.values()].map(item=>({...item,avgPrice:item.quantity?item.cost/item.quantity:0,origins:[...item.origins],segmentCount:item.segments.size})).sort((a,b)=>a.material.localeCompare(b.material,"pt-BR"));
+    renderResults(active);
+    if(!active) showToast("Adicione pelo menos um trecho com quantidade maior que zero.");
+    else showToast(`${active} ${active===1?"trecho processado":"trechos processados"} e ${lastResults.length} insumos consolidados.`);
+    if(scroll&&active) els.purchaseResult.scrollIntoView({behavior:"smooth",block:"start"});
+    return lastResults;
+  }
+
+  function renderResults(active) {
+    const days=planningDays();
+    const totalCost=lastResults.reduce((sum,item)=>sum+item.cost,0);
+    els.resultItems.textContent=integer.format(lastResults.length); els.resultServices.textContent=integer.format(active);
+    els.resultPeriod.textContent=planningPeriod.start&&planningPeriod.end?`${formatDate(planningPeriod.start)} – ${formatDate(planningPeriod.end)}`:"—";
+    els.resultDays.textContent=integer.format(days);
+    els.resultCost.textContent=currency.format(totalCost);
+    els.resultSummary.classList.toggle("hidden",!lastResults.length); els.exportExcel.disabled=!lastResults.length; els.exportPdf.disabled=!lastResults.length;
+    els.resultTimestamp.textContent=lastResults.length?`Planejamento de ${formatDate(planningPeriod.start)} a ${formatDate(planningPeriod.end)} · gerado em ${new Intl.DateTimeFormat("pt-BR",{dateStyle:"short",timeStyle:"short"}).format(new Date())}.`:"Processe os trechos para gerar o detalhamento por estacas.";
+    const detailRows=lastSegmentResults.flatMap(segment=>segment.materials.map(item=>`<tr><td><strong>${esc(segment.stakeStart)}</strong></td><td><strong>${esc(segment.stakeEnd)}</strong></td><td>${esc(sideLabel(segment.side))}</td><td>${esc(segment.serviceName)}${segment.note?`<br><span class="muted">${esc(segment.note)}</span>`:""}</td><td class="num">${esc(number4.format(segment.quantity))} ${esc(segment.unit)}</td><td>${esc(item.material)}</td><td class="num"><strong>${esc(number4.format(item.quantity))}</strong> ${esc(item.unit)}</td><td class="num">${esc(currency.format(item.unitPrice))}</td><td class="num"><strong>${esc(currency.format(item.cost))}</strong></td></tr>`)).join("");
+    els.resultContent.innerHTML=lastResults.length?`<div class="result-subhead">Detalhamento por estaqueamento</div><div class="table-scroll"><table><thead><tr><th>Estaca inicial</th><th>Estaca final</th><th>Lado / posição</th><th>Serviço</th><th class="num">Meta</th><th>Material</th><th class="num">Quantidade</th><th class="num">Valor unitário</th><th class="num">Custo</th></tr></thead><tbody>${detailRows}</tbody></table></div><div class="result-subhead">Consolidado geral de materiais</div><div class="table-scroll"><table><thead><tr><th>Insumo consolidado</th><th>Serviços de origem</th><th class="num">Trechos</th><th class="num">Quantidade total</th><th class="num">Preço médio</th><th class="num">Custo estimado</th></tr></thead><tbody>${lastResults.map(item=>`<tr><td><strong>${esc(item.material)}</strong></td><td>${item.origins.map(origin=>`<span class="badge-origin">${esc(origin)}</span>`).join("")}</td><td class="num">${esc(integer.format(item.segmentCount))}</td><td class="num"><strong>${esc(number4.format(item.quantity))}</strong> ${esc(item.unit)}</td><td class="num">${esc(currency.format(item.avgPrice))}</td><td class="num"><strong>${esc(currency.format(item.cost))}</strong></td></tr>`).join("")}</tbody></table></div>`:`<div class="empty-state"><strong>Nenhum trecho processado</strong>Defina o período, adicione os serviços por estaqueamento e clique em “Processar Quantidades”.</div>`;
+  }
+
+  function addServiceFromDialog(event) {
+    event.preventDefault();
+    const name=els.newServiceName.value.trim(); if(!name){els.newServiceName.focus();return;}
+    const engine=els.newServiceEngine.value;
+    if(engine==="pipe") {
+      const service=makePipeService(600,"PA2","PB"); service.id=uid("tubo"); service.name=name; services.push(service);
+    } else if(engine==="culvert") {
+      const service=makeCulvertService(1.50,.60); service.id=uid("aduela"); service.name=name; services.push(service);
+    } else services.push({id:uid(),name,category:els.newServiceCategory.value,engine,enabled:true,target:0,targetUnit:engine==="layer"?"m³":"un",params:engine==="layer"?{width:7,thickness:.2,density:2,supplyFactor:1.1}:{},materials:[{name:"Novo insumo",coefficient:1,basis:engine==="layer"?"mass":"meta",unit:engine==="layer"?"t":"un",price:0}]});
+    saveServices(); renderSimulator(); els.serviceDialog.close(); els.serviceForm.reset(); showToast("Serviço adicionado. Agora ele pode ser lançado em um ou mais estaqueamentos.");
+  }
+
+  function resultRows() {
+    const days=planningDays();
+    return lastSegmentResults.flatMap(segment=>segment.materials.map(item=>({"Obra":planningPeriod.projectName||DEFAULT_PROJECT_NAME,"Estaca inicial":segment.stakeStart,"Estaca final":segment.stakeEnd,"Lado / posição":sideLabel(segment.side),"Serviço":segment.serviceName,"Categoria":segment.category,"Meta":Number(segment.quantity),"Unidade da meta":segment.unit,"Material":item.material,"Quantidade":Number(item.quantity.toFixed(4)),"Unidade":item.unit,"Valor unitário (R$)":Number(item.unitPrice.toFixed(4)),"Custo estimado (R$)":Number(item.cost.toFixed(2)),"Data inicial":planningPeriod.start,"Data final":planningPeriod.end,"Dias corridos":days,"Observação":segment.note||""})));
+  }
+
+  function consolidatedRows() {
+    return lastResults.map(item=>({"Obra":planningPeriod.projectName||DEFAULT_PROJECT_NAME,"Material":item.material,"Quantidade total":Number(item.quantity.toFixed(4)),"Unidade":item.unit,"Preço médio (R$)":Number(item.avgPrice.toFixed(4)),"Custo estimado (R$)":Number(item.cost.toFixed(2)),"Número de trechos":item.segmentCount,"Serviços de origem":item.origins.join("; ")}));
+  }
+
+  function safeFilePart(value) {
+    return String(value||DEFAULT_PROJECT_NAME).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9_-]+/g,"_").replace(/^_+|_+$/g,"").slice(0,60)||"Obra";
+  }
+
+  function exportExcel() {
+    if(!lastResults.length) return;
+    const rows=resultRows(); const filename=`Lista_de_Materiais_${safeFilePart(planningPeriod.projectName)}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    if(window.XLSX){const ws=XLSX.utils.json_to_sheet(rows),summary=XLSX.utils.json_to_sheet(consolidatedRows());ws["!cols"]=[{wch:32},{wch:16},{wch:16},{wch:20},{wch:38},{wch:18},{wch:14},{wch:16},{wch:38},{wch:16},{wch:12},{wch:20},{wch:20},{wch:14},{wch:14},{wch:14},{wch:32}];summary["!cols"]=[{wch:32},{wch:38},{wch:18},{wch:12},{wch:18},{wch:20},{wch:16},{wch:52}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Por Estaqueamento");XLSX.utils.book_append_sheet(wb,summary,"Consolidado");XLSX.writeFile(wb,filename);}
+    else miniXlsx(rows,filename);
+    showToast("Arquivo Excel gerado.");
+  }
+
+  function xmlEscape(value){return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&apos;"})[c]);}
+  function colLetter(index){let out="";while(index){index--;out=String.fromCharCode(65+index%26)+out;index=Math.floor(index/26);}return out;}
+  function miniXlsx(rows,filename){
+    const headers=Object.keys(rows[0]); const data=[headers,...rows.map(row=>headers.map(h=>row[h]))];
+    const sheetRows=data.map((row,r)=>`<row r="${r+1}">${row.map((value,c)=>{const ref=`${colLetter(c+1)}${r+1}`;return typeof value==="number"&&Number.isFinite(value)?`<c r="${ref}"${r===0?' s="1"':''}><v>${value}</v></c>`:`<c r="${ref}" t="inlineStr"${r===0?' s="1"':''}><is><t>${xmlEscape(value??"")}</t></is></c>`;}).join("")}</row>`).join("");
+    const files={
+      "[Content_Types].xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`,
+      "_rels/.rels":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
+      "xl/workbook.xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Por Estaqueamento" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+      "xl/_rels/workbook.xml.rels":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`,
+      "xl/styles.xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF000B5E"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`,
+      "xl/worksheets/sheet1.xml":`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:${colLetter(headers.length)}${data.length}"/><cols><col min="1" max="1" width="38" customWidth="1"/><col min="2" max="${headers.length}" width="22" customWidth="1"/></cols><sheetData>${sheetRows}</sheetData></worksheet>`
+    };
+    const blob=zipStore(files); downloadBlob(blob,filename);
+  }
+
+  const crcTable=(()=>{const table=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?0xedb88320^(c>>>1):c>>>1;table[n]=c>>>0;}return table;})();
+  function crc32(bytes){let c=0xffffffff;for(const b of bytes)c=crcTable[(c^b)&255]^(c>>>8);return (c^0xffffffff)>>>0;}
+  function u16(n){return new Uint8Array([n&255,(n>>>8)&255]);} function u32(n){return new Uint8Array([n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255]);}
+  function joinBytes(parts){const len=parts.reduce((s,p)=>s+p.length,0),out=new Uint8Array(len);let o=0;for(const p of parts){out.set(p,o);o+=p.length;}return out;}
+  function zipStore(files){const enc=new TextEncoder(),locals=[],centrals=[];let offset=0,count=0;for(const [name,text] of Object.entries(files)){const nb=enc.encode(name),db=enc.encode(text),crc=crc32(db),local=joinBytes([u32(0x04034b50),u16(20),u16(0x0800),u16(0),u16(0),u16(0),u32(crc),u32(db.length),u32(db.length),u16(nb.length),u16(0),nb,db]);locals.push(local);centrals.push(joinBytes([u32(0x02014b50),u16(20),u16(20),u16(0x0800),u16(0),u16(0),u16(0),u32(crc),u32(db.length),u32(db.length),u16(nb.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),nb]));offset+=local.length;count++;}const central=joinBytes(centrals),local=joinBytes(locals),end=joinBytes([u32(0x06054b50),u16(0),u16(0),u16(count),u16(count),u32(central.length),u32(local.length),u16(0)]);return new Blob([local,central,end],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});}
+  function downloadBlob(blob,filename){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);}
+
+  function initSimulator() {
+    loadPlanningPeriod();
+    loadSegments();
+    loadServices();
+    els.projectName.addEventListener("input",updateProjectBranding);
+    els.projectName.addEventListener("change",savePlanningPeriod);
+    els.planningStart.addEventListener("change",savePlanningPeriod);
+    els.planningEnd.addEventListener("change",savePlanningPeriod);
+    els.segmentCategory.addEventListener("change",()=>updateSegmentServiceOptions());
+    els.segmentService.addEventListener("change",()=>updateSegmentUnitOptions());
+    els.segmentForm.addEventListener("submit",handleSegmentSubmit);
+    els.cancelSegmentEdit.addEventListener("click",resetSegmentForm);
+    els.segmentList.addEventListener("click",event=>{const edit=event.target.closest(".edit-segment"),remove=event.target.closest(".remove-segment");if(edit)editSegment(edit.dataset.id);if(remove)deleteSegment(remove.dataset.id);});
+    els.processList.addEventListener("click",()=>processPurchases(true));
+    els.exportExcel.addEventListener("click",exportExcel);
+    els.exportPdf.addEventListener("click",()=>{if(!lastResults.length)return;document.body.classList.add("print-results");setTimeout(()=>window.print(),50);});
+    window.addEventListener("afterprint",()=>document.body.classList.remove("print-results"));
+    els.resetSimulator.addEventListener("click",()=>{if(confirm("Restaurar as composições padrão e remover todos os trechos cadastrados?")){services=hydrateServicePrices(clone(DEFAULT_SERVICES));segments=[];saveServices();saveSegments();resetSegmentForm();renderSimulator();invalidateResults();showToast("Composições restauradas e trechos removidos.");}});
+    els.addService.addEventListener("click",()=>{if(typeof els.serviceDialog.showModal==="function")els.serviceDialog.showModal();else showToast("Seu navegador não oferece a janela de criação. Atualize-o para adicionar serviços.");});
+    els.serviceForm.addEventListener("submit",addServiceFromDialog);
+  }
+
+  function cacheElements() {
+    ["toast","projectTitle","projectName","headerRange","serviceCount","compositionList","planningStart","planningEnd","planningDays","segmentCount","segmentForm","segmentId","segmentCategory","segmentService","segmentStakeStart","segmentStakeEnd","segmentSide","segmentQuantity","segmentUnit","segmentNote","saveSegment","cancelSegmentEdit","segmentList","roundDiscrete","processList","purchaseResult","resultTitle","resultTimestamp","resultSummary","resultItems","resultServices","resultPeriod","resultDays","resultCost","resultContent","exportExcel","exportPdf","addService","resetSimulator","serviceDialog","serviceForm","cancelService","newServiceName","newServiceCategory","newServiceEngine"].forEach(id=>els[id]=$(id));
+  }
+
+  document.addEventListener("DOMContentLoaded",()=>{
+    cacheElements(); initSimulator(); els.cancelService.addEventListener("click",()=>els.serviceDialog.close()); loadEnhancements();
+  });
+
+
+  // ===== ComposerM PWA =====
+  let composerMInstallPrompt = null;
+  function isStandaloneMode() {
+    return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  }
+  function updateInstallButton() {
+    const button = document.getElementById('installComposerM');
+    if (!button) return;
+    button.classList.toggle('show', !!composerMInstallPrompt && !isStandaloneMode());
+  }
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    composerMInstallPrompt = event;
+    updateInstallButton();
+  });
+  window.addEventListener('appinstalled', () => {
+    composerMInstallPrompt = null;
+    updateInstallButton();
+  });
+  document.addEventListener('DOMContentLoaded', () => {
+    const button = document.getElementById('installComposerM');
+    button?.addEventListener('click', async () => {
+      if (!composerMInstallPrompt) return;
+      composerMInstallPrompt.prompt();
+      try { await composerMInstallPrompt.userChoice; } catch {}
+      composerMInstallPrompt = null;
+      updateInstallButton();
+    });
+    updateInstallButton();
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      navigator.serviceWorker.register('./service-worker.js').catch(console.error);
+    }
+  });
+  </script>
 </body>
 </html>
