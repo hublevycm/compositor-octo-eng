@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="ComposerM">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/composerm-logo.svg">
+  <link rel="icon" type="image/svg+xml" href="./icons/composerm-logo.svg">
   <link rel="apple-touch-icon" href="./icons/composerm-logo.svg">
   <style>
     :root {
@@ -326,14 +326,18 @@
   </style>
 
   <style id="composerm-selection-guard">
-    /* ComposerM: evita seleção acidental da interface em uso normal.
-       Campos editáveis continuam selecionáveis para copiar/editar valores. */
-    html, body, body * {
+    /* Evita selecionar acidentalmente a identidade/navegação do app.
+       Resultados e campos continuam selecionáveis para copiar e editar. */
+    .app-header, .app-header *, .app-nav, .app-nav *,
+    .brand, .brand *, .brand-logo-wrap, .brand-logo,
+    #projectTitle, .result-brand, .result-brand *,
+    button, summary, label, .pill, .category-chip {
       -webkit-user-select: none;
       user-select: none;
       -webkit-touch-callout: none;
     }
-    input, textarea, select, option, [contenteditable="true"], .allow-select {
+    input, textarea, select, option, [contenteditable="true"], .allow-select,
+    .result-content, .table-scroll, td {
       -webkit-user-select: text;
       user-select: text;
       -webkit-touch-callout: default;
