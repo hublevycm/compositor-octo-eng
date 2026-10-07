@@ -1,0 +1,36 @@
+{
+  "id": "./",
+  "name": "ComposerM",
+  "short_name": "ComposerM",
+  "description": "Planejamento físico e lançamento de materiais rodoviários, com quantitativos por estaqueamento e geometria PB.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "fullscreen"
+  ],
+  "orientation": "any",
+  "background_color": "#F9FAFB",
+  "theme_color": "#000B5E",
+  "categories": [
+    "productivity",
+    "business",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "./icons/composerm-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/composerm-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
